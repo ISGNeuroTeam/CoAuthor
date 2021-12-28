@@ -1,0 +1,5 @@
+/data/raw/
+/data/processed/
+/venv/
+/lib/
+config_local.yaml

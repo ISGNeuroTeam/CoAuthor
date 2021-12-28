@@ -1,0 +1,12 @@
+models:
+    rubert_tiny: "path/to/models/rubert_tiny/"
+    rut5_sum: "path/to/models/rut5_base_sum/"
+
+data:
+  ru_stopwords: "path/to/data/ru_stopwords.txt"
+  archive: "path/to/data/meduza_vec_df.parquet"
+
+params:
+  reference_number: 6
+  sentence_number: 2
+  similarity_threshold: 0.8
