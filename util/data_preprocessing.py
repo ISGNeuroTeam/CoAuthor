@@ -1,5 +1,6 @@
 import re
 
+import nltk
 import pymorphy2
 from razdel import sentenize, tokenize
 
@@ -32,3 +33,44 @@ def text_preprocessing(text, ru_sw_file):
     tokens = [lemmatize(sent) for sent in tokens]
     tokens = [remove_stop_words_punct(sent, ru_sw_file) for sent in tokens]
     return tokens
+
+
+def flatten_list(input_list):
+    out = []
+    for nested_list in input_list:
+        out.extend(nested_list)
+    return out
+
+
+def get_pos(tokens):
+    return nltk.pos_tag(tokens, lang='rus')
+
+
+def collect_np(lemma_pos_list: list, adjective_tag=frozenset(["ADJ"]), noun_tag=frozenset(["NOUN", "PROPN"])):
+    """
+    Collect only noun phrases from text: [ADJ*(NOUN|PROPN)+]
+    :param noun_tag: code for the noun tag, NN by default (the Penn Treebank Project)
+    :param adjective_tag: code for the adjective tag, JJ by default (the Penn Treebank Project)
+    :param lemma_pos_list: list of pairs [(lemma, pos)]
+    :return: list of noun phrases from text
+    """
+    prev_pos = "START"
+    noun_phrases = []
+    phrase = []
+    for w in lemma_pos_list:
+        pos = w[1]
+        word = w[0]
+        if pos in adjective_tag and len(word) > 1:
+            if prev_pos in adjective_tag or len(phrase) == 0:
+                phrase.append(word)
+            else:
+                noun_phrases.append("%".join(phrase))
+                phrase = [word]
+        elif pos in noun_tag and len(word) > 1:
+            phrase.append(word)
+        else:
+            if len(phrase) > 0:
+                noun_phrases.append("%".join(phrase))
+                phrase = []
+        prev_pos = pos
+    return noun_phrases
