@@ -15,7 +15,6 @@ def correct(s, matches):
 
 def print_match(match):
     context = match.context + "\n\r"
-    error_flag =  " "*match.offsetInContext + "^"*match.errorLength + "\n\r"
+    error_flag = " " * match.offsetInContext + "^" * match.errorLength + "\n\r"
     message = match.message
     return context, error_flag, message
-

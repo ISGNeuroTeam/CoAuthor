@@ -24,5 +24,4 @@ def find_sim_texts(texts, input_vec, ref_number, similarity_threshold, full_outp
                             list(zip(texts["art_ind"], similarity_matrix[0]))))
     if len(sim_texts) > ref_number and not full_output:
         sim_texts = sorted(sim_texts, key=lambda x: x[1], reverse=True)[:ref_number]
-    # sim_ind = [x[0] for x in sim_texts]
     return sim_texts

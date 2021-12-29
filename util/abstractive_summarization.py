@@ -27,5 +27,3 @@ def sum_text(texts_set, model_name, max_length=200, no_repeat_ngram_size=3, num_
         output_sum.append(tokenizer.decode(ids, skip_special_tokens=True, clean_up_tokenization_spaces=False))
 
     return output_sum
-
-
