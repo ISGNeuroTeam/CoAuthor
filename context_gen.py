@@ -87,7 +87,6 @@ def context_params_form():
                          max_value=5,
                          value=sent_num_default,
                          step=1)
-    # TODO: add check for input type (does streamlit has one??)
     return summ_type, ref_num, sim_threshold, sent_num
 
 
