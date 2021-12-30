@@ -22,11 +22,11 @@
 ## Запустить приложение у себя
 
 ### Установка
-1. Скачайте файлы проекта или сделайте форк и воспользуйтесь командой `git clone`
+1. Скачайте файлы проекта или сделайте форк и воспользуйтесь командой `git clone https://github.com/ISGNeuroTeam/CoAuthor.git`
 2. Скачайте файлы с данными: [ru_stopwords.txt](https://drive.google.com/file/d/1zoPSpUM_IOp62uypMNAPgnn4y3wgQYKW/view?usp=sharing) и [news_df.parquet](https://drive.google.com/file/d/1rc1khN5DmwF0xeY73iHWOp1UlqxtLpx_/view?usp=sharing)
 3. Скачайте файлы моделей: [rubert_tiny](https://drive.google.com/drive/folders/16uQsVX6e5HtjoPH1P0lcKPl1zJLe7Bra?usp=sharing) и [rut5_base_sum](https://drive.google.com/drive/folders/1Q2UjRFwQTkHHiF8yxJtc2AO1UYtDuViG?usp=sharing)
 4. Откройте терминал и перейдите в директорию проекта
-5. Используйте `pip install requirements.txt`, чтобы установить все нужные библиотеки
+5. Используйте `pip install -r requirements.txt`, чтобы установить все нужные библиотеки (протестировано на Python 3.8 и Python 3.9)
 
 ### Запуск
 1. Поменяйте в файле `config.yaml` пути к файлам данных и моделям
