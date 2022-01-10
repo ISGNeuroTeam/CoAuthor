@@ -1,4 +1,5 @@
 # Data Description
+Input file must be provided in parquet format. If you have csv data, you can save it as parquet using pandas function [pandas.DataFrame.to_parquet](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_parquet.html).  
 
 ## Columns
 * art_ind - index of the article in format "[date]: [title]"
