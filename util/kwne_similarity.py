@@ -6,7 +6,7 @@ from util.data_preprocessing import lemmatize
 
 def unite_kw_ne(input_kw: list, input_ne: list):
     kw = [token.replace("%", " ") for token in input_kw]
-    ne = lemmatize(input_ne)
+    ne = [" ".join(item).strip() for item in lemmatize(input_ne)]
     return set(kw) | set(ne)
 
 

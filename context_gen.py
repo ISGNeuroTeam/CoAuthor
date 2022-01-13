@@ -21,11 +21,7 @@ grammar_tool = grammar_check.download_tool()
 
 
 def get_text_features(input_text):
-    input_clean_text = data_preprocessing.flatten_list(data_preprocessing.text_preprocessing(input_text, ru_sw_file))
-    input_lemmas_pos = data_preprocessing.get_pos(input_clean_text)
-    input_noun_phrases = data_preprocessing.collect_np(input_lemmas_pos,
-                                                       adjective_tag=frozenset(['A=m', 'A=n']),
-                                                       noun_tag=frozenset(["S"]))
+    input_noun_phrases = data_preprocessing.collect_np(input_text, ru_sw_file)
     input_kw = textrank.text_rank(input_noun_phrases, 15)
     input_ne = ner_finder.finder(input_text)
     input_kw_ne = kwne_similarity.unite_kw_ne(input_kw, input_ne)
