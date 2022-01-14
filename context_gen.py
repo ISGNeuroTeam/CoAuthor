@@ -3,18 +3,19 @@ import time
 import pandas as pd
 import streamlit as st
 from envyaml import EnvYAML
+from transformers import AutoTokenizer, AutoModel
 
 from util import text_embedding, abstractive_summarization, extractive_summarization, grammar_check, kwne_similarity, \
     data_preprocessing, textrank, ner_finder
 
 config = EnvYAML("config_local.yaml")
-rubert_path = config["models"]["rubert_tiny"]
+bert_embedding_path = config["models"]["embedding"]
 rut5_ru_sum_path = config["models"]["rut5_sum"]
 archive_path = config["data"]["archive"]
 ru_sw_file = config["data"]["ru_stopwords"]
 ref_num_default = int(config["params"]["reference_number"])
 sent_num_default = int(config["params"]["sentence_number"])
-sim_threshold_default = float(config["params"]["similarity_threshold"])
+# sim_threshold_default = float(config["params"]["similarity_threshold"])
 
 archive_texts = pd.read_parquet(archive_path)
 grammar_tool = grammar_check.download_tool()
@@ -26,7 +27,10 @@ def get_text_features(input_text):
     input_ne = ner_finder.finder(input_text)
     input_kw_ne = kwne_similarity.unite_kw_ne(input_kw, input_ne)
 
-    input_vec = text_embedding.embed_bert_cls(input_text, rubert_path, rubert_path)
+    tokenizer = AutoTokenizer.from_pretrained(bert_embedding_path)
+    model = AutoModel.from_pretrained(bert_embedding_path)
+    # TODO: add file not found error
+    input_vec = text_embedding.embed_labse(input_text, tokenizer, model)
     return input_vec, input_kw_ne
 
 
@@ -86,15 +90,14 @@ def context_params_form():
     return summ_type, ref_num, sim_threshold, sent_num
 
 
-def generate_context(filtered_df, input_vec, input_kw_ne, ref_num, sim_threshold, summ_type, sent_num):
+def generate_context(filtered_df, input_vec, input_kw_ne, ref_num, summ_type, sent_num):  # sim_threshold,
     if len(filtered_df) == 0:
         st.write("Я не нашёл подходящие под параметры фильтрации тексты. Попробуйте поменять настройки.")
     elif len(filtered_df) > 0:
         cos_sim_ind_score = text_embedding.find_sim_texts(filtered_df.dropna(),
                                                           input_vec,
                                                           ref_num,
-                                                          sim_threshold,
-                                                          full_output=True)
+                                                          full_output=True)  # similarity_threshold,
         filtered_df = filtered_df.set_index("art_ind")
         sim_ind_score = kwne_similarity.get_kwne_sim(input_kw_ne, filtered_df, cos_sim_ind_score)
         sim_ind = [x[0] for x in sim_ind_score][:ref_num]
@@ -150,4 +153,4 @@ def load_page():
     gen_button = st.button(button_name)
 
     if gen_button:
-        generate_context(filtered_df, input_vec, input_kw_ne, ref_num, sim_threshold, summ_type, sent_num)
+        generate_context(filtered_df, input_vec, input_kw_ne, ref_num, summ_type, sent_num)  # sim_threshold,

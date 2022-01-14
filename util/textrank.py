@@ -45,7 +45,7 @@ def get_matrix(vocab, token_pairs):
 
     # Normalize matrix by column
     norm = np.sum(g, axis=0)
-    g_norm = np.divide(g, norm, where=norm != 0)  # this is ignore the 0 element in norm
+    g_norm = np.divide(g, norm, where=norm != 0)  # this is ignoring the 0 element in norm
 
     return g_norm
 
