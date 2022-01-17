@@ -10,7 +10,7 @@ def lemmatize(sent):
 
 def tokens_to_chunks(tokens):
     tagged = pos_tag(tokens, lang='rus')
-    chunk_gram = r"""Chunk: {<A=.?>*<S>+}"""
+    chunk_gram = r"""Chunk: {<A=.?>*<S>+}"""  # collect noun phrases with adjectives and nouns
     chunk_parser = RegexpParser(chunk_gram)
     chunked = chunk_parser.parse(tagged)
     chunks = []

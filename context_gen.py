@@ -76,18 +76,18 @@ def context_params_form():
                         value=ref_num_default,
                         step=1)
 
-    sim_threshold = st.slider("Выберите степень похожести найденных документов на ваш текст",
-                              min_value=0.0,
-                              max_value=1.0,
-                              value=0.8,
-                              step=0.1)
+    # sim_threshold = st.slider("Выберите степень похожести найденных документов на ваш текст",
+    #                           min_value=0.0,
+    #                           max_value=1.0,
+    #                           value=0.8,
+    #                           step=0.1)
 
     sent_num = st.slider("Выберите число предложений, которое нужно сформировать",
                          min_value=1,
                          max_value=5,
                          value=sent_num_default,
                          step=1)
-    return summ_type, ref_num, sim_threshold, sent_num
+    return summ_type, ref_num, sent_num  # sim_threshold,
 
 
 def generate_context(filtered_df, input_vec, input_kw_ne, ref_num, summ_type, sent_num):  # sim_threshold,
@@ -147,7 +147,7 @@ def load_page():
             with col1:
                 filtered_df = filter_params_form()
             with col2:
-                summ_type, ref_num, sim_threshold, sent_num = context_params_form()
+                summ_type, ref_num, sent_num = context_params_form()  # sim_threshold,
             st.form_submit_button("Применить настройки")
 
     gen_button = st.button(button_name)
