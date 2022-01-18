@@ -8,7 +8,7 @@ from transformers import AutoTokenizer, AutoModel
 from util import text_embedding, abstractive_summarization, extractive_summarization, grammar_check, kwne_similarity, \
     data_preprocessing, textrank, ner_finder
 
-config = EnvYAML("config_local.yaml")
+config = EnvYAML("config.yaml")
 bert_embedding_path = config["models"]["embedding"]
 rut5_ru_sum_path = config["models"]["rut5_sum"]
 archive_path = config["data"]["archive"]
