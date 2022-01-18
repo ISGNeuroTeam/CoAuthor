@@ -1,5 +1,5 @@
 models:
-    rubert_tiny: "path/to/models/rubert_tiny/"
+    embedding: "path/to/models/LaBSE-en-ru/"
     rut5_sum: "path/to/models/rut5_base_sum/"
 
 data:
