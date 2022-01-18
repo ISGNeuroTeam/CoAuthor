@@ -4,7 +4,7 @@ models:
 
 data:
   ru_stopwords: "path/to/data/ru_stopwords.txt"
-  archive: "path/to/data/meduza_vec_df.parquet"
+  archive: "path/to/data/news_df_v4.parquet"
 
 params:
   reference_number: 6
