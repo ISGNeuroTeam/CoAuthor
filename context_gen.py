@@ -5,7 +5,7 @@ import streamlit as st
 from envyaml import EnvYAML
 from transformers import AutoTokenizer, AutoModel
 
-from util import text_embedding, abstractive_summarization, extractive_summarization, grammar_check, kwne_similarity, \
+from util import text_embedding, extractive_summarization, grammar_check, kwne_similarity, \
     data_preprocessing, textrank, ner_finder
 
 config = EnvYAML("config_local.yaml")
@@ -21,6 +21,7 @@ archive_texts = pd.read_parquet(archive_path)
 grammar_tool = grammar_check.download_tool()
 
 
+@st.cache
 def get_text_features(input_text):
     input_noun_phrases = data_preprocessing.collect_np(input_text, ru_sw_file)
     input_kw = textrank.text_rank(input_noun_phrases, 15)
@@ -67,8 +68,8 @@ def filter_params_form():
 def context_params_form():
     st.subheader('Настройки генерации бекграунда')
 
-    summ_type = st.selectbox('Выберите способ',
-                             ["Экстрактивная суммаризация", "Абстрактивная суммаризация"])
+    # summ_type = st.selectbox('Выберите способ',
+    #                          ["Экстрактивная суммаризация", "Абстрактивная суммаризация"])
 
     ref_num = st.slider("Выберите максимальное число документов для генерации бекграунда",
                         min_value=1,
@@ -76,32 +77,31 @@ def context_params_form():
                         value=ref_num_default,
                         step=1)
 
-    # sim_threshold = st.slider("Выберите степень похожести найденных документов на ваш текст",
-    #                           min_value=0.0,
-    #                           max_value=1.0,
-    #                           value=0.8,
-    #                           step=0.1)
-
     sent_num = st.slider("Выберите число предложений, которое нужно сформировать",
                          min_value=1,
                          max_value=5,
                          value=sent_num_default,
                          step=1)
-    return summ_type, ref_num, sent_num  # sim_threshold,
+    return ref_num, sent_num  # sim_threshold, summ_type,
 
 
-def generate_context(filtered_df, input_vec, input_kw_ne, ref_num, summ_type, sent_num):  # sim_threshold,
+def generate_context(filtered_df, input_vec, input_kw_ne, ref_num, sent_num):  # sim_threshold,  summ_type,
+    filtered_df = filtered_df.dropna()
+    st.write("Inside generate_context")
     if len(filtered_df) == 0:
         st.write("Я не нашёл подходящие под параметры фильтрации тексты. Попробуйте поменять настройки.")
     elif len(filtered_df) > 0:
-        cos_sim_ind_score = text_embedding.find_sim_texts(filtered_df.dropna(),
+        cos_sim_ind_score = text_embedding.find_sim_texts(filtered_df,
                                                           input_vec,
                                                           ref_num,
                                                           full_output=True)  # similarity_threshold,
+        st.write("cos_sim_ind_score is computed")
         filtered_df = filtered_df.set_index("art_ind")
         sim_ind_score = kwne_similarity.get_kwne_sim(input_kw_ne, filtered_df, cos_sim_ind_score)
+        st.write("sim_ind_score is computed")
         sim_ind = [x[0] for x in sim_ind_score][:ref_num]
         sim_texts_df = filtered_df.loc[sim_ind]
+        st.write("sim_texts_df is filtered")
 
         if len(sim_texts_df) == 0:
             st.write("Я не нашёл подходящие под параметры фильтрации тексты. Попробуйте поменять настройки.")
@@ -110,21 +110,21 @@ def generate_context(filtered_df, input_vec, input_kw_ne, ref_num, summ_type, se
         art_inds = sim_texts_df.index
         urls = sim_texts_df["url"].values
 
-        if summ_type == "Абстрактивная суммаризация":
-            context = abstractive_summarization.sum_text(sim_texts, rut5_ru_sum_path)
-            for i, doc in enumerate(context):
-                st.write(str(i + 1))
-                st.write(doc)
-                st.write("\n\n")
-        else:
-            context = extractive_summarization.lexrank_sum(sim_texts, sent_num=sent_num)
-            for i, doc in enumerate(context):
-                st.markdown("[%s](%s)" % (art_inds[i], urls[i]))
-                output = ""
-                for sentence in doc:
-                    output += sentence
-                    output += " "
-                st.write(output)
+        # if summ_type == "Абстрактивная суммаризация":
+        #     context = abstractive_summarization.sum_text(sim_texts, rut5_ru_sum_path)
+        #     for i, doc in enumerate(context):
+        #         st.write(str(i + 1))
+        #         st.write(doc)
+        #         st.write("\n\n")
+        # else:
+        context = extractive_summarization.lexrank_sum(sim_texts, sent_num=sent_num)
+        for i, doc in enumerate(context):
+            st.markdown("[%s](%s)" % (art_inds[i], urls[i]))
+            output = ""
+            for sentence in doc:
+                output += sentence
+                output += " "
+            st.write(output)
 
 
 def load_page():
@@ -147,10 +147,16 @@ def load_page():
             with col1:
                 filtered_df = filter_params_form()
             with col2:
-                summ_type, ref_num, sent_num = context_params_form()  # sim_threshold,
+                ref_num, sent_num = context_params_form()  # sim_threshold, summ_type,
             st.form_submit_button("Применить настройки")
 
     gen_button = st.button(button_name)
 
     if gen_button:
-        generate_context(filtered_df, input_vec, input_kw_ne, ref_num, summ_type, sent_num)  # sim_threshold,
+        st.write(input_vec)
+        st.write(input_kw_ne)
+        st.write(ref_num)
+        st.write(sent_num)
+        st.write(len(filtered_df))
+        st.write(filtered_df.head())
+        generate_context(filtered_df, input_vec, input_kw_ne, ref_num, sent_num)  # sim_threshold, summ_type,

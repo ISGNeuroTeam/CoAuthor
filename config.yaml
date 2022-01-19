@@ -1,10 +1,10 @@
 models:
-    rubert_tiny: "path/to/models/rubert_tiny/"
-    rut5_sum: "path/to/models/rut5_base_sum/"
+  embedding: "path/to/models/LaBSE-en-ru/"
+  rut5_sum: "path/to/models/rut5_base_sum/"
 
 data:
   ru_stopwords: "path/to/data/ru_stopwords.txt"
-  archive: "path/to/data/meduza_vec_df.parquet"
+  archive: "path/to/data/news_df_v4.parquet"
 
 params:
   reference_number: 6
