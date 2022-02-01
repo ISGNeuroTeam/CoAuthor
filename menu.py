@@ -3,7 +3,7 @@ import streamlit as st
 import context_gen
 
 st.set_page_config(
-    page_title="Помощник журналиста",
+    page_title="СоАвтор",
     layout="wide")
 
 st.sidebar.title("Лента новостей")
