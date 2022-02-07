@@ -10,3 +10,11 @@ params:
   reference_number: 6
   sentence_number: 2
   similarity_threshold: 0.8
+
+connection:
+  host: 'HOST_IP'
+  port: 'PORT'
+  user: 'LOGIN'
+  password: 'PASSWORD'
+  loglevel: "DEBUG"
+  data_path: "path/to/data/news_df_v4.parquet"

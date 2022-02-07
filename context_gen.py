@@ -1,29 +1,33 @@
 import time
 
-import pandas as pd
+# import pandas as pd
 import streamlit as st
 from envyaml import EnvYAML
 from transformers import AutoTokenizer, AutoModel
 
 from util import text_embedding, abstractive_summarization, extractive_summarization, grammar_check, kwne_similarity, \
     data_preprocessing, textrank, ner_finder
+from util.otp_connector import get_dedup_articles, get_keywords, get_embedding
 
-config = EnvYAML("config.yaml")
+config = EnvYAML("config_local.yaml")
 bert_embedding_path = config["models"]["embedding"]
 rut5_ru_sum_path = config["models"]["rut5_sum"]
 archive_path = config["data"]["archive"]
 ru_sw_file = config["data"]["ru_stopwords"]
 ref_num_default = int(config["params"]["reference_number"])
 sent_num_default = int(config["params"]["sentence_number"])
-# sim_threshold_default = float(config["params"]["similarity_threshold"])
+data_path = config["connection"]["data_path"]
 
-archive_texts = pd.read_parquet(archive_path)
+# archive_texts = pd.read_parquet(archive_path)
+archive_texts = get_dedup_articles(data_path)
 grammar_tool = grammar_check.download_tool()
 
 
 def get_text_features(input_text):
     input_noun_phrases = data_preprocessing.collect_np(input_text, ru_sw_file)
     input_kw = textrank.text_rank(input_noun_phrases, 15)
+    kw_df, kw_filename = get_keywords(input_text.replace("\n", " ").replace("\r", " ").replace('"', ''))
+    otp_kw = kw_df["keywords"].values[0]
     input_ne = ner_finder.finder(input_text)
     input_kw_ne = kwne_similarity.unite_kw_ne(input_kw, input_ne)
 
@@ -31,6 +35,8 @@ def get_text_features(input_text):
     model = AutoModel.from_pretrained(bert_embedding_path)
     # TODO: add file not found error
     input_vec = text_embedding.embed_labse(input_text, tokenizer, model)
+    vec_df, vec_filename = get_embedding(kw_filename)
+    otp_vec = vec_df["embedding"].values[0]
     return input_vec, input_kw_ne
 
 
@@ -75,12 +81,6 @@ def context_params_form():
                         max_value=10,
                         value=ref_num_default,
                         step=1)
-
-    # sim_threshold = st.slider("Выберите степень похожести найденных документов на ваш текст",
-    #                           min_value=0.0,
-    #                           max_value=1.0,
-    #                           value=0.8,
-    #                           step=0.1)
 
     sent_num = st.slider("Выберите число предложений, которое нужно сформировать",
                          min_value=1,
