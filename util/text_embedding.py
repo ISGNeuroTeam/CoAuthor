@@ -26,7 +26,7 @@ def embed_labse(text, tokenizer, model):
 
 
 def find_sim_texts(texts, input_vec, ref_number, full_output=False): # similarity_threshold,
-    archive_vecs = np.array([x.tolist() for x in texts["bert_vec_labse"].values])
+    archive_vecs = np.array([x.split("; ") for x in texts["embedding"].values])
     similarity_matrix = cosine_similarity(input_vec.reshape(1, -1), archive_vecs)
     # sim_texts = list(filter(lambda x: x[1] > similarity_threshold,
     #                         list(zip(texts["art_ind"], similarity_matrix[0]))))
