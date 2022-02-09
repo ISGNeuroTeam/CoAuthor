@@ -57,7 +57,7 @@ def context_params_form():
                          max_value=5,
                          value=sent_num_default,
                          step=1)
-    return ref_num, sent_num  # summ_type,
+    return ref_num, sent_num
 
 
 def generate_context(path, dates, sources, input_vec, input_kw_ne, ref_num, sent_num):

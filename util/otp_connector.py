@@ -18,7 +18,7 @@ tws = 11
 twf = 22
 
 
-def get_filtered_articles(path, dates, sources):  #  kw_ne
+def get_filtered_articles(path, dates, sources):  # kw_ne
     # dates = (datetime.date(2022, 1, 1), datetime.date(2022, 1, 27))
     query_text = '| readFile format=parquet path=%s' % path
     # |eval kw_ne_temp = kw_ne | makemv delim=";" kw_ne_temp | mvexpand kw_ne_temp
