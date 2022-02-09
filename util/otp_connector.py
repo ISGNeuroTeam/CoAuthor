@@ -18,7 +18,7 @@ tws = 11
 twf = 22
 
 
-def get_filtered_articles(path, dates, sources, kw_ne):
+def get_filtered_articles(path, dates, sources):  #  kw_ne
     # dates = (datetime.date(2022, 1, 1), datetime.date(2022, 1, 27))
     query_text = '| readFile format=parquet path=%s' % path
     # |eval kw_ne_temp = kw_ne | makemv delim=";" kw_ne_temp | mvexpand kw_ne_temp
@@ -44,16 +44,7 @@ def get_unique_source_topics(path, feature):
 
 
 def get_text_features_eep(text):
-    # filename = str(time.time()) + "###" + text[:10].replace(" ", "_")
     query_text = '| makeresults | eval text="%s" | runProcess script=kw_textrank_eep.kw_extraction ' \
                  '| runProcess script=doc_embedding.worker' % text  # | writeFile format=parquet path=%s
     job = conn.jobs.create(query_text=query_text, cache_ttl=cache_ttl, tws=tws, twf=twf, blocking=True)
     return pd.DataFrame(job.dataset.load())
-
-# def sim_score(filename, archive_path, ref_num):
-#     query_text = '| readFile format=parquet path=%s | append [ | readFile format=parquet path=%s ]' \
-#                 '| eval flag=if(art_ind==%s, 1, 0) | runProcess script=cosine_similarity.worker ' \
-#                  '| where flag=0 | fields art_ind, text, clean_text, url, sim_score | sort -sim_score ' \
-#                  '| head %d' % (filename, archive_path, filename, ref_num)
-#     job = conn.jobs.create(query_text=query_text, cache_ttl=cache_ttl, tws=tws, twf=twf, blocking=True)
-#     return pd.DataFrame(job.dataset.load())

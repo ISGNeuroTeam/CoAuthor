@@ -1,5 +1,3 @@
-# import time
-
 import numpy as np
 import streamlit as st
 from envyaml import EnvYAML
@@ -63,7 +61,7 @@ def context_params_form():
 
 
 def generate_context(path, dates, sources, input_vec, input_kw_ne, ref_num, sent_num):
-    filtered_df = get_filtered_articles(path, dates, sources, input_kw_ne)
+    filtered_df = get_filtered_articles(path, dates, sources)
     cos_sim_ind_score = text_embedding.find_sim_texts(filtered_df.dropna(),
                                                       input_vec,
                                                       ref_num,
