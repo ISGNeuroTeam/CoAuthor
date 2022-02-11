@@ -3,7 +3,7 @@ import streamlit as st
 from envyaml import EnvYAML
 
 from util import extractive_summarization, grammar_check, text_embedding, kwne_similarity
-from util.otp_connector import get_text_features_eep, get_unique_source_topics, get_filtered_articles
+from util.otp_connector import get_text_features_eep, get_unique_values, get_filtered_articles
 
 config = EnvYAML("config_local.yaml")
 bert_embedding_path = config["models"]["embedding"]
@@ -17,7 +17,10 @@ data_path = config["connection"]["data_path"]
 grammar_tool = grammar_check.download_tool()
 
 
+# TODO: use cache for this
+@st.experimental_memo
 def get_text_features(input_text):
+    # TODO: make choice between otl and python kw + emb extraction
     input_df = get_text_features_eep(input_text.replace("\n", " ").replace("\r", " ").replace('"', ''))
     input_kw_ne = set(input_df["kw_ne"].values[0].split("; "))
     input_vec = np.array(input_df["embedding"].values[0].split("; "))
@@ -25,6 +28,7 @@ def get_text_features(input_text):
 
 
 def check_grammar_on_click(input_text: str, grammar_container: st.container):
+    # TODO: Do it with annotated text? https://github.com/tvst/st-annotated-text
     matches = grammar_check.find_mistakes(input_text, grammar_tool)
     with grammar_container:
         for i, match in enumerate(matches):
@@ -37,8 +41,8 @@ def check_grammar_on_click(input_text: str, grammar_container: st.container):
 
 def filter_params_form(path):
     st.subheader('Параметры фильтрации документов')
-    sources_list = get_unique_source_topics(path, "source")["source"].values
-    sources = st.multiselect('Выберите источник', sources_list)
+    sources_list = get_unique_values(path, "source")["source"].values
+    sources = st.multiselect('Выберите источник(и)', sources_list)
     dates = st.date_input("Задайте период поиска", value=[])
     return sources, dates
 
