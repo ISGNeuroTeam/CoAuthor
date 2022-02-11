@@ -44,9 +44,9 @@ def load_page():
     data_path = config["connection"]["data_path"]
     ru_sw_file = config["data"]["ru_stopwords"]
     # TODO: add form
-    with st.form("params_form"):
+    with st.form("feed_params_form"):
         sources, kw = filter_params_form(data_path, ru_sw_file)
         st.form_submit_button("Обновить ленту")
-    filtered_df = get_filtered_articles(data_path, sources=sources, kw_ne=kw, n=15)
+    filtered_df = get_filtered_articles(data_path, sources=sources, kw_ne=kw, n=10)
     for index, row in filtered_df.iterrows():
         print_news(row)

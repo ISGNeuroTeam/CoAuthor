@@ -1,8 +1,10 @@
 import numpy as np
 import streamlit as st
 from envyaml import EnvYAML
+from transformers import AutoTokenizer, AutoModel
 
-from util import extractive_summarization, grammar_check, text_embedding, kwne_similarity
+from util import extractive_summarization, grammar_check, text_embedding, kwne_similarity, data_preprocessing, \
+    ner_finder, textrank
 from util.otp_connector import get_text_features_eep, get_unique_values, get_filtered_articles
 
 config = EnvYAML("config_local.yaml")
@@ -13,22 +15,34 @@ ru_sw_file = config["data"]["ru_stopwords"]
 ref_num_default = int(config["params"]["reference_number"])
 sent_num_default = int(config["params"]["sentence_number"])
 data_path = config["connection"]["data_path"]
+otl_text_features = bool(config["params"]["otl_text_features"])
 
 grammar_tool = grammar_check.download_tool()
 
 
-# TODO: use cache for this
 @st.experimental_memo
-def get_text_features(input_text):
-    # TODO: make choice between otl and python kw + emb extraction
+def get_text_features_otp(input_text):
     input_df = get_text_features_eep(input_text.replace("\n", " ").replace("\r", " ").replace('"', ''))
     input_kw_ne = set(input_df["kw_ne"].values[0].split("; "))
     input_vec = np.array(input_df["embedding"].values[0].split("; "))
     return input_kw_ne, input_vec
 
 
+@st.experimental_memo
+def get_text_features(input_text):
+    input_noun_phrases = data_preprocessing.collect_np(input_text, ru_sw_file)
+    input_kw = textrank.text_rank(input_noun_phrases, 15)
+    input_ne = data_preprocessing.filter_chunks(ner_finder.finder(input_text), ru_sw_file)
+    input_kw_ne = kwne_similarity.unite_kw_ne(input_kw, input_ne)
+
+    tokenizer = AutoTokenizer.from_pretrained(bert_embedding_path)
+    model = AutoModel.from_pretrained(bert_embedding_path)
+    # TODO: add file not found error
+    input_vec = text_embedding.embed_labse(input_text, tokenizer, model)
+    return input_vec, input_kw_ne
+
+
 def check_grammar_on_click(input_text: str, grammar_container: st.container):
-    # TODO: Do it with annotated text? https://github.com/tvst/st-annotated-text
     matches = grammar_check.find_mistakes(input_text, grammar_tool)
     with grammar_container:
         for i, match in enumerate(matches):
@@ -98,7 +112,10 @@ def load_page():
     input_text = st.text_area('Начните набирать текст в поле. '
                               'Когда текст готов, задайте настройки и нажмите  "%s"' % button_name,
                               height=700)
-    input_kw_ne, input_vec = get_text_features(input_text)
+    if otl_text_features:
+        input_kw_ne, input_vec = get_text_features_otp(input_text)
+    else:
+        input_kw_ne, input_vec = get_text_features(input_text)
 
     grammar_button = st.button("Проверить правописание")
     grammar_container = st.container()

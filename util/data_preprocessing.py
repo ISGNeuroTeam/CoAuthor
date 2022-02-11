@@ -20,14 +20,16 @@ def tokens_to_chunks(tokens):
 
 
 def filter_chunks(chunks, ru_sw_file):
-    pattern_punct = '[\.!@"“’«»#$%&\'()*+,—/:;<=>?^_`{|}~\[\][\n] ]'
+    pattern_punct = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~«»…“„—'
     stopwords = open(ru_sw_file, "r+").read().split("\n")
     # TODO: add file not found error
     chunks = [m.lemmatize(chunk) for chunk in chunks]
     out_chunks = []
     for chunk in chunks:
         out_chunks.append(
-            " ".join([lemma for lemma in chunk if lemma not in stopwords and lemma not in pattern_punct]))
+            " ".join([lemma.translate(str.maketrans('', '', pattern_punct)).strip() for lemma in chunk if
+                      lemma not in stopwords]).strip().lower()
+        )
     return list(filter(lambda ch: len(ch) > 3, out_chunks))
 
 
