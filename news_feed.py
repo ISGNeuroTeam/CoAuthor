@@ -8,10 +8,12 @@ from util.otp_connector import get_filtered_articles, get_unique_values
 def filter_params_form(path, ru_sw_file):
     st.subheader('Параметры фильтрации статей в ленте')
     sources_list = get_unique_values(path, "source")["source"].values
-    # kw_list = get_unique_values(path, "kw_ne")["kw_ne"].values
-    sources = st.multiselect('Выберите источник(и)', sources_list)
-    # kw = st.multiselect('Задайте ключевые слова или названия', kw_list)
-    kw = st.text_input('Задайте ключевые слова или названия через запятую')
+    sources = st.multiselect('Выберите источник(и)',
+                             sources_list,
+                             default=st.session_state["feed_sources"])
+    kw = st.text_input('Задайте ключевые слова или названия через запятую',
+                       key="feed_kw",
+                       value=st.session_state["feed_kw"])
     kw = [kw.strip().lower() for kw in kw.split(",") if len(kw.strip()) > 0]
     kw = filter_chunks(kw, ru_sw_file)
     return sources, kw
@@ -24,7 +26,7 @@ def print_news(news_row):
         if len(news_row["text"]) > 900:
             short_text = news_row["text"][:300]
         else:
-            short_text = news_row["text"][:len(news_row["text"])//3]
+            short_text = news_row["text"][:len(news_row["text"]) // 3]
         st.markdown(short_text + "...")
     st.markdown(f'<span class="blue">[Подробнее]({news_row["url"]})</span>', unsafe_allow_html=True)
 
@@ -38,15 +40,22 @@ def news_to_placeholder(archive_df, placeholder_item):
 
 
 def load_page():
+    if "feed_sources" not in st.session_state:
+        st.session_state["feed_sources"] = []
+    if "feed_kw" not in st.session_state:
+        st.session_state["feed_kw"] = []
+
     st.title("Лента новостей")
 
     config = EnvYAML("config_local.yaml")
     data_path = config["connection"]["data_path"]
     ru_sw_file = config["data"]["ru_stopwords"]
-    # TODO: add form
     with st.form("feed_params_form"):
         sources, kw = filter_params_form(data_path, ru_sw_file)
-        st.form_submit_button("Обновить ленту")
+        feed_params_button = st.form_submit_button("Обновить ленту")
+    if feed_params_button:
+        st.session_state["feed_sources"] = sources
+        st.session_state["feed_kw"] = kw
     filtered_df = get_filtered_articles(data_path, sources=sources, kw_ne=kw, n=10)
     for index, row in filtered_df.iterrows():
         print_news(row)
