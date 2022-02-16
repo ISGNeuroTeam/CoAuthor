@@ -80,6 +80,7 @@ def context_params_form():
     return ref_num, sent_num
 
 
+@st.experimental_memo
 def generate_context(path, dates, sources, input_vec, input_kw_ne, ref_num, sent_num):
     filtered_df = get_filtered_articles(path, sources, dates)
     cos_sim_ind_score = text_embedding.find_sim_texts(filtered_df.dropna(),
@@ -92,20 +93,21 @@ def generate_context(path, dates, sources, input_vec, input_kw_ne, ref_num, sent
     sim_texts_df = filtered_df.loc[sim_ind]
 
     if len(sim_texts_df) == 0:
-        st.write("Я не нашёл подходящие под параметры фильтрации тексты. Попробуйте поменять настройки.")
+        return []
 
     sim_texts = sim_texts_df[["clean_text", "text"]].values.tolist()
     art_inds = sim_texts_df.index
     urls = sim_texts_df["url"].values
 
     context = extractive_summarization.lexrank_sum(sim_texts, sent_num=sent_num)
+    output = []
     for i, doc in enumerate(context):
-        st.markdown("[%s](%s)" % (art_inds[i], urls[i]))
-        output = ""
+        doc_text = ""
         for sentence in doc:
-            output += sentence
-            output += " "
-        st.write(output)
+            doc_text += sentence
+            doc_text += " "
+        output.append([art_inds[i], urls[i], doc_text])
+    return output
 
 
 def load_page():
@@ -117,6 +119,8 @@ def load_page():
         st.session_state["sent_num"] = sent_num_default
     if "ref_num" not in st.session_state:
         st.session_state["ref_num"] = ref_num_default
+    if "context_output" not in st.session_state:
+        st.session_state["context_output"] = []
 
     st.title('Генерация бекграунда')
     button_name = "Сформировать бекграунд статьи"
@@ -152,4 +156,12 @@ def load_page():
     gen_button = st.button(button_name)
 
     if gen_button:
-        generate_context(data_path, dates, sources, input_vec, input_kw_ne, ref_num, sent_num)
+        output = generate_context(data_path, dates, sources, input_vec, input_kw_ne, ref_num, sent_num)
+        if len(output) == 0:
+            st.write("Я не нашёл подходящие под параметры фильтрации тексты. Попробуйте поменять настройки.")
+        else:
+            st.session_state["context_output"] = output
+    for i, doc in enumerate(st.session_state["context_output"]):
+        art_ind, url, doc_text = doc
+        st.markdown("[%s](%s)" % (art_ind, url))
+        st.write(doc_text)
