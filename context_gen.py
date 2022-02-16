@@ -9,7 +9,6 @@ from util.otp_connector import get_text_features_eep, get_unique_values, get_fil
 
 config = EnvYAML("config_local.yaml")
 bert_embedding_path = config["models"]["embedding"]
-rut5_ru_sum_path = config["models"]["rut5_sum"]
 archive_path = config["data"]["archive"]
 ru_sw_file = config["data"]["ru_stopwords"]
 ref_num_default = int(config["params"]["reference_number"])
@@ -39,7 +38,7 @@ def get_text_features(input_text):
     model = AutoModel.from_pretrained(bert_embedding_path)
     # TODO: add file not found error
     input_vec = text_embedding.embed_labse(input_text, tokenizer, model)
-    return input_vec, input_kw_ne
+    return input_kw_ne, input_vec
 
 
 def check_grammar_on_click(input_text: str, grammar_container: st.container):
@@ -56,8 +55,11 @@ def check_grammar_on_click(input_text: str, grammar_container: st.container):
 def filter_params_form(path):
     st.subheader('Параметры фильтрации документов')
     sources_list = get_unique_values(path, "source")["source"].values
-    sources = st.multiselect('Выберите источник(и)', sources_list)
-    dates = st.date_input("Задайте период поиска", value=[])
+    sources = st.multiselect('Выберите источник(и)',
+                             sources_list,
+                             default=st.session_state["context_sources"])  # key="sources_context"
+    dates = st.date_input("Задайте период поиска",
+                          value=st.session_state["context_dates"])  # key="dates_context"
     return sources, dates
 
 
@@ -67,19 +69,19 @@ def context_params_form():
     ref_num = st.slider("Выберите максимальное число документов для генерации бекграунда",
                         min_value=1,
                         max_value=10,
-                        value=ref_num_default,
-                        step=1)
+                        value=st.session_state["ref_num"],
+                        step=1)  # key="ref_num"
 
     sent_num = st.slider("Выберите число предложений, которое нужно сформировать",
                          min_value=1,
                          max_value=5,
-                         value=sent_num_default,
-                         step=1)
+                         value=st.session_state["sent_num"],
+                         step=1)  # key="sent_num"
     return ref_num, sent_num
 
 
 def generate_context(path, dates, sources, input_vec, input_kw_ne, ref_num, sent_num):
-    filtered_df = get_filtered_articles(path, dates, sources)
+    filtered_df = get_filtered_articles(path, sources, dates)
     cos_sim_ind_score = text_embedding.find_sim_texts(filtered_df.dropna(),
                                                       input_vec,
                                                       ref_num,
@@ -107,11 +109,21 @@ def generate_context(path, dates, sources, input_vec, input_kw_ne, ref_num, sent
 
 
 def load_page():
+    if "context_sources" not in st.session_state:
+        st.session_state["context_sources"] = []
+    if "context_dates" not in st.session_state:
+        st.session_state["context_dates"] = []
+    if "sent_num" not in st.session_state:
+        st.session_state["sent_num"] = sent_num_default
+    if "ref_num" not in st.session_state:
+        st.session_state["ref_num"] = ref_num_default
+
     st.title('Генерация бекграунда')
     button_name = "Сформировать бекграунд статьи"
     input_text = st.text_area('Начните набирать текст в поле. '
                               'Когда текст готов, задайте настройки и нажмите  "%s"' % button_name,
-                              height=700)
+                              height=700, key="input_text")
+
     if otl_text_features:
         input_kw_ne, input_vec = get_text_features_otp(input_text)
     else:
@@ -130,7 +142,12 @@ def load_page():
                 sources, dates = filter_params_form(data_path)
             with col2:
                 ref_num, sent_num = context_params_form()
-            st.form_submit_button("Применить настройки")
+            params_form_button = st.form_submit_button("Применить настройки")
+            if params_form_button:
+                st.session_state["context_sources"] = sources
+                st.session_state["context_dates"] = dates
+                st.session_state["ref_num"] = ref_num
+                st.session_state["sent_num"] = sent_num
 
     gen_button = st.button(button_name)
 

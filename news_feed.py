@@ -12,8 +12,7 @@ def filter_params_form(path, ru_sw_file):
                              sources_list,
                              default=st.session_state["feed_sources"])
     kw = st.text_input('Задайте ключевые слова или названия через запятую',
-                       key="feed_kw",
-                       value=st.session_state["feed_kw"])
+                       value=st.session_state["feed_kw"])  # key="feed_kw"
     kw = [kw.strip().lower() for kw in kw.split(",") if len(kw.strip()) > 0]
     kw = filter_chunks(kw, ru_sw_file)
     return sources, kw
@@ -43,7 +42,7 @@ def load_page():
     if "feed_sources" not in st.session_state:
         st.session_state["feed_sources"] = []
     if "feed_kw" not in st.session_state:
-        st.session_state["feed_kw"] = []
+        st.session_state["feed_kw"] = ""
 
     st.title("Лента новостей")
 
@@ -55,7 +54,7 @@ def load_page():
         feed_params_button = st.form_submit_button("Обновить ленту")
     if feed_params_button:
         st.session_state["feed_sources"] = sources
-        st.session_state["feed_kw"] = kw
+        st.session_state["feed_kw"] = ", ".join(kw)
     filtered_df = get_filtered_articles(data_path, sources=sources, kw_ne=kw, n=10)
     for index, row in filtered_df.iterrows():
         print_news(row)
