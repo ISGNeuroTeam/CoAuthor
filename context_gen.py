@@ -57,9 +57,9 @@ def filter_params_form(path):
     sources_list = get_unique_values(path, "source")["source"].values
     sources = st.multiselect('Выберите источник(и)',
                              sources_list,
-                             default=st.session_state["context_sources"])  # key="sources_context"
+                             default=st.session_state["context_sources"])
     dates = st.date_input("Задайте период поиска",
-                          value=st.session_state["context_dates"])  # key="dates_context"
+                          value=st.session_state["context_dates"])
     return sources, dates
 
 
@@ -70,13 +70,13 @@ def context_params_form():
                         min_value=1,
                         max_value=10,
                         value=st.session_state["ref_num"],
-                        step=1)  # key="ref_num"
+                        step=1)
 
     sent_num = st.slider("Выберите число предложений, которое нужно сформировать",
                          min_value=1,
                          max_value=5,
                          value=st.session_state["sent_num"],
-                         step=1)  # key="sent_num"
+                         step=1)
     return ref_num, sent_num
 
 

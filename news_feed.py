@@ -12,7 +12,7 @@ def filter_params_form(path, ru_sw_file):
                              sources_list,
                              default=st.session_state["feed_sources"])
     kw = st.text_input('Задайте ключевые слова или названия через запятую',
-                       value=st.session_state["feed_kw"])  # key="feed_kw"
+                       value=st.session_state["feed_kw"])
     kw = [kw.strip().lower() for kw in kw.split(",") if len(kw.strip()) > 0]
     kw = filter_chunks(kw, ru_sw_file)
     return sources, kw
