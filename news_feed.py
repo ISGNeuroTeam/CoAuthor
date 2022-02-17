@@ -30,14 +30,6 @@ def print_news(news_row):
     st.markdown(f'<span class="blue">[Подробнее]({news_row["url"]})</span>', unsafe_allow_html=True)
 
 
-def news_to_placeholder(archive_df, placeholder_item):
-    with placeholder_item:
-        with st.container():
-            news = archive_df.sample(n=5)
-            for index, row in news.iterrows():
-                print_news(row)
-
-
 def load_page():
     if "feed_sources" not in st.session_state:
         st.session_state["feed_sources"] = []
