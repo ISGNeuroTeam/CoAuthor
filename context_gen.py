@@ -9,7 +9,6 @@ from util.otp_connector import get_text_features_eep, get_unique_values, get_fil
 
 config = EnvYAML("config_local.yaml")
 bert_embedding_path = config["models"]["embedding"]
-archive_path = config["data"]["archive"]
 ru_sw_file = config["data"]["ru_stopwords"]
 ref_num_default = int(config["params"]["reference_number"])
 sent_num_default = int(config["params"]["sentence_number"])
