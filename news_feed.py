@@ -7,15 +7,19 @@ from util.otp_connector import get_filtered_articles, get_unique_values
 
 def filter_params_form(path, ru_sw_file):
     st.subheader('Параметры фильтрации статей в ленте')
-    sources_list = get_unique_values(path, "source")["source"].values
-    sources = st.multiselect('Выберите источник(и)',
+    sources_list = sorted(get_unique_values(path, "source")["source"].values)
+    source_types_list = sorted(get_unique_values(path, "source_type")["source_type"].values)
+    sources = st.multiselect('Выберите отдельные источники',
                              sources_list,
                              default=st.session_state["feed_sources"])
+    source_types = st.multiselect('Или выберите тип источников',
+                                  source_types_list,
+                                  default=st.session_state["feed_types"])
     kw = st.text_input('Задайте ключевые слова или названия через запятую',
                        value=st.session_state["feed_kw"])
     kw = [kw.strip().lower() for kw in kw.split(",") if len(kw.strip()) > 0]
     kw = filter_chunks(kw, ru_sw_file)
-    return sources, kw
+    return source_types, sources, kw
 
 
 def print_news(news_row):
@@ -31,6 +35,8 @@ def print_news(news_row):
 
 
 def load_page():
+    if "feed_types" not in st.session_state:
+        st.session_state["feed_types"] = []
     if "feed_sources" not in st.session_state:
         st.session_state["feed_sources"] = []
     if "feed_kw" not in st.session_state:
@@ -42,11 +48,12 @@ def load_page():
     data_path = config["connection"]["data_path"]
     ru_sw_file = config["data"]["ru_stopwords"]
     with st.form("feed_params_form"):
-        sources, kw = filter_params_form(data_path, ru_sw_file)
+        source_types, sources, kw = filter_params_form(data_path, ru_sw_file)
         feed_params_button = st.form_submit_button("Обновить ленту")
     if feed_params_button:
+        st.session_state["feed_types"] = source_types
         st.session_state["feed_sources"] = sources
         st.session_state["feed_kw"] = ", ".join(kw)
-    filtered_df = get_filtered_articles(data_path, sources=sources, kw_ne=kw, n=10)
+    filtered_df = get_filtered_articles(data_path, sources=sources, source_types=source_types, kw_ne=kw, n=10)
     for index, row in filtered_df.iterrows():
         print_news(row)

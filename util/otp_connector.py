@@ -18,26 +18,39 @@ tws = 11
 twf = 22
 
 
-def get_filtered_articles(path, sources, dates=None, kw_ne=None, n=2000):
+def get_filtered_articles(path, sources, source_types=None, dates=None, kw_ne=None, n=2000):
     # TODO: split archive df into two indexes: art_ind+text, art_ind+other
-    # dates = (datetime.date(2022, 1, 1), datetime.date(2022, 1, 27))
+    # example of format: dates = (datetime.date(2022, 1, 1), datetime.date(2022, 1, 27))
     if kw_ne is None:
         kw_ne = []
     if dates is None:
         dates = []
+    if source_types is None:
+        source_types = []
     query_text = '| readFile format=parquet path=%s' % path
     if len(kw_ne) > 0:
         query_text += '|eval kw_ne_temp = kw_ne | makemv delim=";" kw_ne_temp | mvexpand kw_ne_temp'
         query_text += "| where " + " OR ".join([f'like(kw_ne_temp, "%{kw}%")' for kw in kw_ne])
         query_text += "| dedup art_ind"
     if len(sources) > 0:
-        query_text += "| where " + " OR ".join([f'source="{source}"' for source in sources])
+        source_condition = " OR ".join([f'source="{source}"' for source in sources])
+    else:
+        source_condition = ""
+    if len(source_types) > 0:
+        source_type_condition = " OR ".join([f'source_type="{source}"' for source in source_types])
+    else:
+        source_type_condition = ""
+    if len(source_condition + source_type_condition) > 0:
+        if len(sources) > 0 and len(source_types) > 0:
+            query_text += "| where " + source_condition + " OR " + source_type_condition
+        else:
+            query_text += "| where " + source_condition + source_type_condition
     if len(dates) > 0:
         start, end = dates
         start = time.mktime(start.timetuple())
         end = time.mktime(end.timetuple())
         query_text += "| where _time>=%d AND _time<=%d" % (start, end)
-    query_text += "|sort -_time | head %d" % n
+    query_text += "| dedup art_ind | sort -_time | head %d" % n
     job = conn.jobs.create(query_text=query_text, cache_ttl=cache_ttl, tws=tws, twf=twf, blocking=True)
     return pd.DataFrame(job.dataset.load())
 
