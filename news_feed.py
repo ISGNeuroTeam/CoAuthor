@@ -1,3 +1,5 @@
+import re
+
 import streamlit as st
 from envyaml import EnvYAML
 
@@ -15,7 +17,7 @@ def filter_params_form(path, ru_sw_file):
     source_types = st.multiselect('Или выберите тип источников',
                                   source_types_list,
                                   default=st.session_state["feed_types"])
-    kw = st.text_input('Задайте ключевые слова или названия через запятую',
+    kw = st.text_input('Поиск по ключевым словам, организациям, местам и героям публикаций (введите через запятую)',
                        value=st.session_state["feed_kw"])
     kw = [kw.strip().lower() for kw in kw.split(",") if len(kw.strip()) > 0]
     kw = filter_chunks(kw, ru_sw_file)
@@ -26,10 +28,11 @@ def print_news(news_row):
     st.subheader(news_row["title"])
     st.write(f'{news_row["date"]}, {news_row["source"]}', unsafe_allow_html=True)
     if news_row["text"] is not None:
-        if len(news_row["text"]) > 900:
-            short_text = news_row["text"][:300]
+        long_text = re.sub(r"[\n\r]+", " ", news_row["text"]).strip()
+        if len(long_text) > 900:
+            short_text = long_text[:300]
         else:
-            short_text = news_row["text"][:len(news_row["text"]) // 3]
+            short_text = long_text[:len(long_text) // 3]
         st.markdown(short_text + "...")
     st.markdown(f'<span class="blue">[Подробнее]({news_row["url"]})</span>', unsafe_allow_html=True)
 
