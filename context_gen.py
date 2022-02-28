@@ -81,7 +81,9 @@ def context_params_form():
 
 @st.experimental_memo
 def generate_context(path, dates, sources, input_vec, input_kw_ne, ref_num, sent_num):
-    filtered_df = get_filtered_articles(path, sources, dates)
+    filtered_df = get_filtered_articles(path, sources, dates=dates)
+    if len(filtered_df) == 0:
+        return []
     cos_sim_ind_score = text_embedding.find_sim_texts(filtered_df.dropna(),
                                                       input_vec,
                                                       ref_num,
@@ -156,10 +158,9 @@ def load_page():
 
     if gen_button:
         output = generate_context(data_path, dates, sources, input_vec, input_kw_ne, ref_num, sent_num)
+        st.session_state["context_output"] = output
         if len(output) == 0:
             st.write("Я не нашёл подходящие под параметры фильтрации тексты. Попробуйте поменять настройки.")
-        else:
-            st.session_state["context_output"] = output
     for i, doc in enumerate(st.session_state["context_output"]):
         art_ind, url, doc_text = doc
         st.markdown("[%s](%s)" % (art_ind, url))
