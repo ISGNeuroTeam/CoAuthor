@@ -41,13 +41,14 @@ def clean_blocks(blocks):
         block.empty()
 
 
-def login_form(block):
+def login_form(block, login_cache=""):
     # TODO: add button for text input?
     block_container = block.container()
     block_container.image("media/Soavtor Logo.png", use_column_width=False, width=300)
     block_container.subheader("Сосредоточься на истории, а не технических деталях")
     block_container.write("\n\n\n")
-    return block_container.text_input("Для доступа к приложению введите адрес почты, который Вы вводили при регистрации, и нажмите Enter")
+    return block_container.text_input("Для доступа к приложению введите адрес почты, который Вы вводили при регистрации, и нажмите Enter",
+                                      autocomplete=login_cache)
 
 
 def info_form(block, info=""):
@@ -68,9 +69,13 @@ def main():
     context_gen.load_page()
 
 
+if "login" not in st.session_state:
+    st.session_state["login"] = ""
 _, center_col, _ = st.columns([1, 3, 1])
 login_block, info_block, video_block = generate_blocks(center_col)
-login = login_form(login_block)
+login = login_form(login_block, st.session_state["login"])
+if login != st.session_state["login"] and login != "":
+    st.session_state["login"] = login
 info_form(info_block)
 video_form(video_block)
 config = EnvYAML("config_local.yaml")
@@ -78,8 +83,8 @@ login_list_path = config["authentication"]["login_list_path"]
 login_list = open(login_list_path, "r").read().split("\n")
 
 
-if is_authenticated(login, login_list):
+if is_authenticated(st.session_state["login"], login_list):
     clean_blocks([login_block, info_block, video_block])
     main()
-elif login:
+elif st.session_state["login"]:
     info_form(info_block, info="Такая почта не зарегистрирована")
