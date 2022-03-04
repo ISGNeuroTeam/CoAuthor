@@ -11,17 +11,21 @@ def filter_params_form(path, ru_sw_file):
     st.subheader('Параметры фильтрации статей в ленте')
     sources_list = sorted(get_unique_values(path, "source")["source"].values)
     source_types_list = sorted(get_unique_values(path, "source_type")["source_type"].values)
-    sources = st.multiselect('Выберите отдельные источники',
+    region_list = sorted(get_unique_values(path, "region")["region"].values)
+    sources = st.multiselect('Выберите источники по названию',
                              sources_list,
                              default=st.session_state["feed_sources"])
-    source_types = st.multiselect('Или выберите тип источников',
+    source_types = st.multiselect('Или по типу источника...',
                                   source_types_list,
                                   default=st.session_state["feed_types"])
+    regions = st.multiselect('...и региону',
+                             region_list,
+                             default=st.session_state["feed_regions"])
     kw = st.text_input('Поиск по ключевым словам, организациям, местам и героям публикаций (введите через запятую)',
                        value=st.session_state["feed_kw"])
     kw = [kw.strip().lower() for kw in kw.split(",") if len(kw.strip()) > 0]
     kw = filter_chunks(kw, ru_sw_file)
-    return source_types, sources, kw
+    return regions, source_types, sources, kw
 
 
 def print_news(news_row):
@@ -38,6 +42,8 @@ def print_news(news_row):
 
 
 def load_page():
+    if "feed_regions" not in st.session_state:
+        st.session_state["feed_regions"] = []
     if "feed_types" not in st.session_state:
         st.session_state["feed_types"] = []
     if "feed_sources" not in st.session_state:
@@ -51,9 +57,10 @@ def load_page():
     data_path = config["connection"]["data_path"]
     ru_sw_file = config["data"]["ru_stopwords"]
     with st.form("feed_params_form"):
-        source_types, sources, kw = filter_params_form(data_path, ru_sw_file)
+        regions, source_types, sources, kw = filter_params_form(data_path, ru_sw_file)
         feed_params_button = st.form_submit_button("Обновить ленту")
     if feed_params_button:
+        st.session_state["feed_regions"] = regions
         st.session_state["feed_types"] = source_types
         st.session_state["feed_sources"] = sources
         st.session_state["feed_kw"] = ", ".join(kw)

@@ -54,12 +54,20 @@ def check_grammar_on_click(input_text: str, grammar_container: st.container):
 def filter_params_form(path):
     st.subheader('Параметры фильтрации документов')
     sources_list = get_unique_values(path, "source")["source"].values
-    sources = st.multiselect('Выберите источник(и)',
+    source_types_list = sorted(get_unique_values(path, "source_type")["source_type"].values)
+    region_list = sorted(get_unique_values(path, "region")["region"].values)
+    sources = st.multiselect('Выберите источники по названию',
                              sources_list,
                              default=st.session_state["context_sources"])
+    source_types = st.multiselect('Или по типу источника...',
+                                  source_types_list,
+                                  default=st.session_state["context_types"])
+    regions = st.multiselect('...и региону',
+                             region_list,
+                             default=st.session_state["context_regions"])
     dates = st.date_input("Задайте период поиска",
                           value=st.session_state["context_dates"])
-    return sources, dates
+    return regions, source_types, sources, dates
 
 
 def context_params_form():
@@ -112,6 +120,10 @@ def generate_context(path, dates, sources, input_vec, input_kw_ne, ref_num, sent
 
 
 def load_page():
+    if "context_regions" not in st.session_state:
+        st.session_state["context_regions"] = []
+    if "context_types" not in st.session_state:
+        st.session_state["context_types"] = []
     if "context_sources" not in st.session_state:
         st.session_state["context_sources"] = []
     if "context_dates" not in st.session_state:
@@ -144,11 +156,13 @@ def load_page():
         with st.form("params_form"):
             col1, col2 = st.columns(2)
             with col1:
-                sources, dates = filter_params_form(data_path)
+                regions, source_types, sources, dates = filter_params_form(data_path)
             with col2:
                 ref_num, sent_num = context_params_form()
             params_form_button = st.form_submit_button("Применить настройки")
             if params_form_button:
+                st.session_state["context_regions"] = regions
+                st.session_state["context_types"] = source_types
                 st.session_state["context_sources"] = sources
                 st.session_state["context_dates"] = dates
                 st.session_state["ref_num"] = ref_num
