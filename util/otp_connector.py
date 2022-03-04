@@ -18,15 +18,21 @@ tws = 11
 twf = 22
 
 
-def get_filtered_articles(path, sources, source_types=None, dates=None, kw_ne=None, n=2000):
+def get_filtered_articles(path, sources, source_types=None, regions=None, dates=None, kw_ne=None, n=2000):
     # TODO: split archive df into two indexes: art_ind+text, art_ind+other
     # example of format: dates = (datetime.date(2022, 1, 1), datetime.date(2022, 1, 27))
     if kw_ne is None:
         kw_ne = []
     if dates is None:
         dates = []
+    if regions is None:
+        regions = []
+    elif "Федеральные СМИ" in regions:
+        regions.extend(["", "Россия"])
     if source_types is None:
         source_types = []
+    elif "СМИ" in source_types:
+        source_types.extend(["Региональные СМИ", "Федеральные СМИ"])
     query_text = '| readFile format=parquet path=%s' % path
     if len(kw_ne) > 0:
         query_text += '|eval kw_ne_temp = kw_ne | makemv delim=";" kw_ne_temp | mvexpand kw_ne_temp'
@@ -45,6 +51,8 @@ def get_filtered_articles(path, sources, source_types=None, dates=None, kw_ne=No
             query_text += "| where " + source_condition + " OR " + source_type_condition
         else:
             query_text += "| where " + source_condition + source_type_condition
+    if len(regions) > 0:
+        query_text += "| where " + " OR ".join([f'region="{reg}"' for reg in regions])
     if len(dates) > 0:
         start, end = dates
         start = time.mktime(start.timetuple())

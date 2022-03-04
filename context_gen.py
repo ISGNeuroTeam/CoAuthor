@@ -54,8 +54,14 @@ def check_grammar_on_click(input_text: str, grammar_container: st.container):
 def filter_params_form(path):
     st.subheader('Параметры фильтрации документов')
     sources_list = get_unique_values(path, "source")["source"].values
-    source_types_list = sorted(get_unique_values(path, "source_type")["source_type"].values)
+    # source_types_list = sorted(get_unique_values(path, "source_type")["source_type"].values)
+    source_types_list = ["СМИ", "Сайты ведомств и оперативных служб"]
     region_list = sorted(get_unique_values(path, "region")["region"].values)
+    if "" in region_list:
+        region_list.remove("")
+    if "Россия" in region_list:
+        region_list.remove("Россия")
+    region_list.append("Федеральные СМИ")
     sources = st.multiselect('Выберите источники по названию',
                              sources_list,
                              default=st.session_state["context_sources"])
@@ -88,8 +94,8 @@ def context_params_form():
 
 
 @st.experimental_memo
-def generate_context(path, dates, sources, input_vec, input_kw_ne, ref_num, sent_num):
-    filtered_df = get_filtered_articles(path, sources, dates=dates)
+def generate_context(path, dates, sources, source_types, regions, input_vec, input_kw_ne, ref_num, sent_num):
+    filtered_df = get_filtered_articles(path, sources, source_types=source_types, regions=regions, dates=dates)
     if len(filtered_df) == 0:
         return []
     cos_sim_ind_score = text_embedding.find_sim_texts(filtered_df.dropna(),
@@ -171,7 +177,7 @@ def load_page():
     gen_button = st.button(button_name)
 
     if gen_button:
-        output = generate_context(data_path, dates, sources, input_vec, input_kw_ne, ref_num, sent_num)
+        output = generate_context(data_path, dates, sources, source_types, regions, input_vec, input_kw_ne, ref_num, sent_num)
         st.session_state["context_output"] = output
         if len(output) == 0:
             st.write("Я не нашёл подходящие под параметры фильтрации тексты. Попробуйте поменять настройки.")
