@@ -12,7 +12,7 @@ def filter_params_form(path, ru_sw_file):
     sources_list = sorted(get_unique_values(path, "source")["source"].values)
     # source_types_list = sorted(get_unique_values(path, "source_type")["source_type"].values)
     source_types_list = ["СМИ", "Сайты ведомств и оперативных служб"]
-    region_list = sorted(get_unique_values(path, "region")["region"].values)
+    region_list = sorted(get_unique_values(path, "source_region")["source_region"].values)
     if "" in region_list:
         region_list.remove("")
     if "Россия" in region_list:
