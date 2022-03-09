@@ -5,7 +5,7 @@ from transformers import AutoTokenizer, AutoModel
 
 from util import extractive_summarization, grammar_check, text_embedding, kwne_similarity, data_preprocessing, \
     ner_finder, textrank
-from util.otp_connector import get_text_features_eep, get_unique_values, get_filtered_articles
+from util.otp_connector import get_text_features_eep, get_unique_values, get_filtered_articles_with_kw_score
 
 config = EnvYAML("config_local.yaml")
 bert_embedding_path = config["models"]["embedding"]
@@ -56,7 +56,7 @@ def filter_params_form(path):
     sources_list = get_unique_values(path, "source")["source"].values
     # source_types_list = sorted(get_unique_values(path, "source_type")["source_type"].values)
     source_types_list = ["СМИ", "Сайты ведомств и оперативных служб"]
-    region_list = sorted(get_unique_values(path, "region")["region"].values)
+    region_list = sorted(get_unique_values(path, "source_region")["source_region"].values)
     if "" in region_list:
         region_list.remove("")
     if "Россия" in region_list:
@@ -76,7 +76,9 @@ def filter_params_form(path):
     return regions, source_types, sources, dates
 
 
-def context_params_form():
+def context_params_form(input_kw_ne):
+    if input_kw_ne is None:
+        input_kw_ne = []
     st.subheader('Настройки генерации бекграунда')
 
     ref_num = st.slider("Выберите максимальное число документов для генерации бекграунда",
@@ -90,15 +92,31 @@ def context_params_form():
                          max_value=5,
                          value=st.session_state["sent_num"],
                          step=1)
-    return ref_num, sent_num
+
+    if len(input_kw_ne) > 0:
+        kw_ne = st.multiselect("Выберите ключевые слова для более точного формирования бекграунда", input_kw_ne)
+    else:
+        kw_ne = []
+    return ref_num, sent_num, kw_ne
 
 
 @st.experimental_memo
 def generate_context(path, dates, sources, source_types, regions, input_vec, input_kw_ne, ref_num, sent_num):
-    filtered_df = get_filtered_articles(path, sources, source_types=source_types, regions=regions, dates=dates)
+    stop_kw = "день, неделя, год, тасс, интерфакс, страна, число, январь, февраль, март, апрель, май, июнь, июль, " \
+              "август, сентябрь, октябрь, ноябрь, декабрь, дело, слово, место, время, заявление, вопрос, информация," \
+              " interfax ru, понедельник, вторник, среда, четверг, пятница, суббота, воскресенье"
+    input_kw_ne = set([kw for kw in input_kw_ne if kw not in stop_kw])
+    # TODO: take kw_ne_score to get_kw_ne_sim function for the final score computation
+    filtered_df = get_filtered_articles_with_kw_score(path,
+                                                      sources,
+                                                      source_types=source_types,
+                                                      kw_ne=input_kw_ne,
+                                                      regions=regions,
+                                                      dates=dates,
+                                                      n=2000)
     if len(filtered_df) == 0:
         return []
-    cos_sim_ind_score = text_embedding.find_sim_texts(filtered_df.dropna(),
+    cos_sim_ind_score = text_embedding.find_sim_texts(filtered_df.dropna(how="all"),
                                                       input_vec,
                                                       ref_num,
                                                       full_output=True)
@@ -164,7 +182,9 @@ def load_page():
             with col1:
                 regions, source_types, sources, dates = filter_params_form(data_path)
             with col2:
-                ref_num, sent_num = context_params_form()
+                ref_num, sent_num, chosen_kw_ne = context_params_form(input_kw_ne)
+                if len(chosen_kw_ne) == 0:
+                    chosen_kw_ne = input_kw_ne
             params_form_button = st.form_submit_button("Применить настройки")
             if params_form_button:
                 st.session_state["context_regions"] = regions
@@ -177,7 +197,8 @@ def load_page():
     gen_button = st.button(button_name)
 
     if gen_button:
-        output = generate_context(data_path, dates, sources, source_types, regions, input_vec, input_kw_ne, ref_num, sent_num)
+        output = generate_context(data_path, dates, sources, source_types, regions, input_vec, chosen_kw_ne, ref_num,
+                                  sent_num)
         st.session_state["context_output"] = output
         if len(output) == 0:
             st.write("Я не нашёл подходящие под параметры фильтрации тексты. Попробуйте поменять настройки.")
