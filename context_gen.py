@@ -60,7 +60,7 @@ def check_grammar_on_click(input_text: str, grammar_container: st.container):
 
 def filter_params_form(path):
     st.subheader('Параметры фильтрации документов')
-    sources_list = get_unique_values(path, "source")["source"].values
+    sources_list = sorted(get_unique_values(path, "source")["source"].values)
     # source_types_list = sorted(get_unique_values(path, "source_type")["source_type"].values)
     source_types_list = ["СМИ", "Сайты ведомств и оперативных служб"]
     region_list = sorted(get_unique_values(path, "source_region")["source_region"].values)
@@ -110,7 +110,8 @@ def context_params_form(input_kw_ne):
                          step=1)
 
     if len(input_kw_ne) > 0:
-        kw_ne = st.multiselect("Выберите ключевые слова для более точного формирования бекграунда", input_kw_ne)
+        kw_ne = st.multiselect("Выберите ключевые слова для более точного формирования бекграунда",
+                               sorted(list(input_kw_ne)))
     else:
         kw_ne = []
     return ref_num, sent_num, kw_ne

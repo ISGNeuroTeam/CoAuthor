@@ -67,6 +67,8 @@ def load_page():
     if "feed_kw" not in st.session_state:
         st.session_state["feed_kw"] = ""
 
+    st.markdown("[Предложить источник](https://forms.yandex.ru/cloud/6231dd6bf0984d4d30ed61b9/) &nbsp; &nbsp; &nbsp; &nbsp; [Форма обратной связи](https://forms.yandex.ru/cloud/6231dbd47ffcaf612c42870e/)")
+    # st.markdown("[Форма обратной связи](https://forms.yandex.ru/cloud/6231dbd47ffcaf612c42870e/)")
     st.title("Лента новостей")
 
     config = EnvYAML("config_local.yaml")
