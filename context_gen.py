@@ -69,15 +69,24 @@ def filter_params_form(path):
     if "Россия" in region_list:
         region_list.remove("Россия")
     region_list.append("Федеральные СМИ")
+    sources_default = st.session_state["context_sources"]
+    if set(sources_default) | set(sources_list) != set(sources_list):
+        sources_default = set(sources_default) & set(sources_list)
     sources = st.multiselect('Выберите источники по названию',
                              sources_list,
-                             default=st.session_state["context_sources"])
+                             default=sources_default)
+    sources_types_default = st.session_state["context_types"]
+    if set(sources_types_default) | set(source_types_list) != set(source_types_list):
+        sources_types_default = set(sources_types_default) & set(source_types_list)
     source_types = st.multiselect('Или по типу источника...',
                                   source_types_list,
-                                  default=st.session_state["context_types"])
+                                  default=sources_types_default)
+    regions_default = st.session_state["context_regions"]
+    if set(regions_default) | set(region_list) != set(region_list):
+        regions_default = set(regions_default) & set(region_list)
     regions = st.multiselect('...и региону',
                              region_list,
-                             default=st.session_state["context_regions"])
+                             default=regions_default)
     dates = st.date_input("Задайте период поиска",
                           value=st.session_state["context_dates"])
     return regions, source_types, sources, dates
