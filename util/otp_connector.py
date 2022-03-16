@@ -47,7 +47,7 @@ def filter_dataset(sources, source_types=None, regions=None, dates=None, kw_ne=N
         else:
             query_text += "| where " + source_condition + source_type_condition
     if len(regions) > 0:
-        query_text += "| where " + " OR ".join([f'region="{reg}"' for reg in regions])
+        query_text += "| where " + " OR ".join([f'source_region="{reg}"' for reg in regions])
     if len(dates) > 0:
         start, end = dates
         start = time.mktime(start.timetuple())
