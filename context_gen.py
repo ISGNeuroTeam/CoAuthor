@@ -1,28 +1,13 @@
 import numpy as np
 import streamlit as st
-from envyaml import EnvYAML
-from pymystem3 import Mystem
 from transformers import AutoTokenizer, AutoModel
 
 from util import extractive_summarization, grammar_check, text_embedding, kwne_similarity, data_preprocessing, \
     ner_finder, textrank
 from util.otp_connector import get_text_features_eep, get_unique_values, get_filtered_articles_with_kw_score
-
-config = EnvYAML("config_local.yaml")
-bert_embedding_path = config["models"]["embedding"]
-ru_sw_file = config["data"]["ru_stopwords"]
-ref_num_default = int(config["params"]["reference_number"])
-sent_num_default = int(config["params"]["sentence_number"])
-data_path = config["connection"]["data_path"]
-otl_text_features = bool(config["params"]["otl_text_features"])
-read_mystem_local = bool(config["models"]["read_mystem_local"])
-mystem_path = config["models"]["local_mystem_path"]
+from util.util import check_multiselect_default
 
 grammar_tool = grammar_check.download_tool()
-if read_mystem_local:
-    mystem_model = Mystem(mystem_bin=mystem_path)
-else:
-    mystem_model = Mystem()
 
 
 @st.experimental_memo
@@ -34,11 +19,11 @@ def get_text_features_otp(input_text):
 
 
 @st.experimental_memo
-def get_text_features(input_text):
-    input_noun_phrases = data_preprocessing.collect_np(input_text, ru_sw_file, mystem_model)
+def get_text_features(input_text, ru_sw_file, _mystem_model, bert_embedding_path):
+    input_noun_phrases = data_preprocessing.collect_np(input_text, ru_sw_file, _mystem_model)
     input_kw = textrank.text_rank(input_noun_phrases, 15)
-    input_ne = data_preprocessing.filter_chunks(mystem_model, ner_finder.finder(input_text), ru_sw_file)
-    input_kw_ne = kwne_similarity.unite_kw_ne(input_kw, input_ne, mystem_model)
+    input_ne = data_preprocessing.filter_chunks(_mystem_model, ner_finder.finder(input_text), ru_sw_file)
+    input_kw_ne = kwne_similarity.unite_kw_ne(input_kw, input_ne, _mystem_model)
 
     tokenizer = AutoTokenizer.from_pretrained(bert_embedding_path)
     model = AutoModel.from_pretrained(bert_embedding_path)
@@ -59,9 +44,9 @@ def check_grammar_on_click(input_text: str, grammar_container: st.container):
 
 
 def filter_params_form(path):
+    # TODO: get sources and etc and save as session state? or cache function
     st.subheader('Параметры фильтрации документов')
     sources_list = sorted(get_unique_values(path, "source")["source"].values)
-    # source_types_list = sorted(get_unique_values(path, "source_type")["source_type"].values)
     source_types_list = ["СМИ", "Сайты ведомств и оперативных служб"]
     region_list = sorted(get_unique_values(path, "source_region")["source_region"].values)
     if "" in region_list:
@@ -69,21 +54,15 @@ def filter_params_form(path):
     if "Россия" in region_list:
         region_list.remove("Россия")
     region_list.append("Федеральные СМИ")
-    sources_default = st.session_state["context_sources"]
-    if set(sources_default) | set(sources_list) != set(sources_list):
-        sources_default = set(sources_default) & set(sources_list)
+    sources_default = check_multiselect_default("context_sources", sources_list)
     sources = st.multiselect('Выберите источники по названию',
                              sources_list,
                              default=sources_default)
-    sources_types_default = st.session_state["context_types"]
-    if set(sources_types_default) | set(source_types_list) != set(source_types_list):
-        sources_types_default = set(sources_types_default) & set(source_types_list)
+    sources_types_default = check_multiselect_default("context_types", source_types_list)
     source_types = st.multiselect('Или по типу источника...',
                                   source_types_list,
                                   default=sources_types_default)
-    regions_default = st.session_state["context_regions"]
-    if set(regions_default) | set(region_list) != set(region_list):
-        regions_default = set(regions_default) & set(region_list)
+    regions_default = check_multiselect_default("context_regions", region_list)
     regions = st.multiselect('...и региону',
                              region_list,
                              default=regions_default)
@@ -160,7 +139,13 @@ def generate_context(path, dates, sources, source_types, regions, input_vec, inp
     return output
 
 
-def load_page():
+def load_page(bert_embedding_path,
+              ru_sw_file,
+              ref_num_default,
+              sent_num_default,
+              data_path,
+              otl_text_features,
+              mystem_model):
     if "context_regions" not in st.session_state:
         st.session_state["context_regions"] = []
     if "context_types" not in st.session_state:
@@ -185,7 +170,7 @@ def load_page():
     if otl_text_features:
         input_kw_ne, input_vec = get_text_features_otp(input_text)
     else:
-        input_kw_ne, input_vec = get_text_features(input_text)
+        input_kw_ne, input_vec = get_text_features(input_text, ru_sw_file, mystem_model, bert_embedding_path)
 
     grammar_button = st.button("Проверить правописание")
     grammar_container = st.container()

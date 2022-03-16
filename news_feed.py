@@ -1,17 +1,15 @@
 import re
 
 import streamlit as st
-from envyaml import EnvYAML
-from pymystem3 import Mystem
 
 from util.data_preprocessing import filter_chunks
 from util.otp_connector import get_filtered_articles, get_unique_values
+from util.util import check_multiselect_default
 
 
 def filter_params_form(path, ru_sw_file, mystem_model):
     st.subheader('Параметры фильтрации статей в ленте')
     sources_list = sorted(get_unique_values(path, "source")["source"].values)
-    # source_types_list = sorted(get_unique_values(path, "source_type")["source_type"].values)
     source_types_list = ["СМИ", "Сайты ведомств и оперативных служб"]
     region_list = sorted(get_unique_values(path, "source_region")["source_region"].values)
     if "" in region_list:
@@ -19,21 +17,15 @@ def filter_params_form(path, ru_sw_file, mystem_model):
     if "Россия" in region_list:
         region_list.remove("Россия")
     region_list.append("Федеральные СМИ")
-    sources_default = st.session_state["feed_sources"]
-    if set(sources_default) | set(sources_list) != set(sources_list):
-        sources_default = set(sources_default) & set(sources_list)
+    sources_default = check_multiselect_default("feed_sources", sources_list)
     sources = st.multiselect('Выберите источники по названию',
                              sources_list,
                              default=sources_default)
-    sources_types_default = st.session_state["feed_types"]
-    if set(sources_types_default) | set(source_types_list) != set(source_types_list):
-        sources_types_default = set(sources_types_default) & set(source_types_list)
+    sources_types_default = check_multiselect_default("feed_types", source_types_list)
     source_types = st.multiselect('Или по типу источника...',
                                   source_types_list,
                                   default=sources_types_default)
-    regions_default = st.session_state["feed_regions"]
-    if set(regions_default) | set(region_list) != set(region_list):
-        regions_default = set(regions_default) & set(region_list)
+    regions_default = check_multiselect_default("feed_regions", region_list)
     regions = st.multiselect('...и региону',
                              region_list,
                              default=regions_default)
@@ -57,7 +49,7 @@ def print_news(news_row):
     st.markdown(f'<span class="blue">[Подробнее]({news_row["url"]})</span>', unsafe_allow_html=True)
 
 
-def load_page():
+def load_page(data_path, ru_sw_file, mystem_model):
     if "feed_regions" not in st.session_state:
         st.session_state["feed_regions"] = []
     if "feed_types" not in st.session_state:
@@ -68,19 +60,7 @@ def load_page():
         st.session_state["feed_kw"] = ""
 
     st.markdown("[Предложить источник](https://forms.yandex.ru/cloud/6231dd6bf0984d4d30ed61b9/) &nbsp; &nbsp; &nbsp; &nbsp; [Форма обратной связи](https://forms.yandex.ru/cloud/6231dbd47ffcaf612c42870e/)")
-    # st.markdown("[Форма обратной связи](https://forms.yandex.ru/cloud/6231dbd47ffcaf612c42870e/)")
     st.title("Лента новостей")
-
-    config = EnvYAML("config_local.yaml")
-    data_path = config["connection"]["data_path"]
-    ru_sw_file = config["data"]["ru_stopwords"]
-    read_mystem_local = bool(config["models"]["read_mystem_local"])
-    mystem_path = config["models"]["local_mystem_path"]
-
-    if read_mystem_local:
-        mystem_model = Mystem(mystem_bin=mystem_path)
-    else:
-        mystem_model = Mystem()
 
     with st.form("feed_params_form"):
         regions, source_types, sources, kw = filter_params_form(data_path, ru_sw_file, mystem_model)
