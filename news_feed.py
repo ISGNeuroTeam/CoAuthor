@@ -2,12 +2,13 @@ import re
 
 import streamlit as st
 from envyaml import EnvYAML
+from pymystem3 import Mystem
 
 from util.data_preprocessing import filter_chunks
 from util.otp_connector import get_filtered_articles, get_unique_values
 
 
-def filter_params_form(path, ru_sw_file):
+def filter_params_form(path, ru_sw_file, mystem_model):
     st.subheader('Параметры фильтрации статей в ленте')
     sources_list = sorted(get_unique_values(path, "source")["source"].values)
     # source_types_list = sorted(get_unique_values(path, "source_type")["source_type"].values)
@@ -30,7 +31,7 @@ def filter_params_form(path, ru_sw_file):
     kw = st.text_input('Поиск по ключевым словам, организациям, местам и героям публикаций (введите через запятую)',
                        value=st.session_state["feed_kw"])
     kw = [kw.strip().lower() for kw in kw.split(",") if len(kw.strip()) > 0]
-    kw = filter_chunks(kw, ru_sw_file)
+    kw = filter_chunks(mystem_model, kw, ru_sw_file)
     return regions, source_types, sources, kw
 
 
@@ -62,8 +63,16 @@ def load_page():
     config = EnvYAML("config_local.yaml")
     data_path = config["connection"]["data_path"]
     ru_sw_file = config["data"]["ru_stopwords"]
+    read_mystem_local = bool(config["models"]["read_mystem_local"])
+    mystem_path = config["models"]["local_mystem_path"]
+
+    if read_mystem_local:
+        mystem_model = Mystem(mystem_bin=mystem_path)
+    else:
+        mystem_model = Mystem()
+
     with st.form("feed_params_form"):
-        regions, source_types, sources, kw = filter_params_form(data_path, ru_sw_file)
+        regions, source_types, sources, kw = filter_params_form(data_path, ru_sw_file, mystem_model)
         feed_params_button = st.form_submit_button("Обновить ленту")
     if feed_params_button:
         st.session_state["feed_regions"] = regions

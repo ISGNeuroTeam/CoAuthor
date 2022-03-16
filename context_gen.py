@@ -1,6 +1,7 @@
 import numpy as np
 import streamlit as st
 from envyaml import EnvYAML
+from pymystem3 import Mystem
 from transformers import AutoTokenizer, AutoModel
 
 from util import extractive_summarization, grammar_check, text_embedding, kwne_similarity, data_preprocessing, \
@@ -14,8 +15,14 @@ ref_num_default = int(config["params"]["reference_number"])
 sent_num_default = int(config["params"]["sentence_number"])
 data_path = config["connection"]["data_path"]
 otl_text_features = bool(config["params"]["otl_text_features"])
+read_mystem_local = bool(config["models"]["read_mystem_local"])
+mystem_path = config["models"]["local_mystem_path"]
 
 grammar_tool = grammar_check.download_tool()
+if read_mystem_local:
+    mystem_model = Mystem(mystem_bin=mystem_path)
+else:
+    mystem_model = Mystem()
 
 
 @st.experimental_memo
@@ -28,10 +35,10 @@ def get_text_features_otp(input_text):
 
 @st.experimental_memo
 def get_text_features(input_text):
-    input_noun_phrases = data_preprocessing.collect_np(input_text, ru_sw_file)
+    input_noun_phrases = data_preprocessing.collect_np(input_text, ru_sw_file, mystem_model)
     input_kw = textrank.text_rank(input_noun_phrases, 15)
-    input_ne = data_preprocessing.filter_chunks(ner_finder.finder(input_text), ru_sw_file)
-    input_kw_ne = kwne_similarity.unite_kw_ne(input_kw, input_ne)
+    input_ne = data_preprocessing.filter_chunks(mystem_model, ner_finder.finder(input_text), ru_sw_file)
+    input_kw_ne = kwne_similarity.unite_kw_ne(input_kw, input_ne, mystem_model)
 
     tokenizer = AutoTokenizer.from_pretrained(bert_embedding_path)
     model = AutoModel.from_pretrained(bert_embedding_path)

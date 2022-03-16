@@ -12,3 +12,4 @@ language_tool_python~=2.6.2
 nltk~=3.6.3
 natasha~=1.4.0
 sentencepiece~=0.1.96
+pymystem3~=0.2.0

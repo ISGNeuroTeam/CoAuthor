@@ -1,11 +1,11 @@
 from nltk import word_tokenize, pos_tag, RegexpParser
-from pymystem3 import Mystem
+# from pymystem3 import Mystem
 
-m = Mystem()
+# m = Mystem(mystem_bin="/opt/otp/DataJournalismApp/models/mystem")
 
 
-def lemmatize(sent):
-    return [m.lemmatize(token) for token in sent]
+def lemmatize(mystem_model, sent):
+    return [mystem_model.lemmatize(token) for token in sent]
 
 
 def tokens_to_chunks(tokens):
@@ -19,11 +19,11 @@ def tokens_to_chunks(tokens):
     return chunks
 
 
-def filter_chunks(chunks, ru_sw_file):
+def filter_chunks(mystem_model, chunks, ru_sw_file):
     pattern_punct = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~«»…“„—'
     stopwords = open(ru_sw_file, "r+").read().split("\n")
     # TODO: add file not found error
-    chunks = [m.lemmatize(chunk) for chunk in chunks]
+    chunks = [mystem_model.lemmatize(chunk) for chunk in chunks]
     out_chunks = []
     for chunk in chunks:
         out_chunks.append(
@@ -33,7 +33,7 @@ def filter_chunks(chunks, ru_sw_file):
     return list(filter(lambda ch: len(ch) > 3, out_chunks))
 
 
-def collect_np(text, ru_sw_file):
+def collect_np(text, ru_sw_file, mystem_model):
     text = text.lower()
     tokens = word_tokenize(text)
-    return filter_chunks(tokens_to_chunks(tokens), ru_sw_file)
+    return filter_chunks(mystem_model, tokens_to_chunks(tokens), ru_sw_file)
