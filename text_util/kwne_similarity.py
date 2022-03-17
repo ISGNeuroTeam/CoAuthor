@@ -3,7 +3,7 @@ from collections import Counter
 import numpy as np
 import pandas as pd
 
-from util.data_preprocessing import lemmatize
+from text_util.data_preprocessing import lemmatize
 
 
 def unite_kw_ne(input_kw: list, input_ne: list, mystem_model):

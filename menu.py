@@ -4,11 +4,15 @@ from pymystem3 import Mystem
 
 import context_gen
 import news_feed
-from app_conf.authentication import info_form, is_authenticated, clean_blocks, authentication_page
-from app_conf.style_config import set_style_conf
+from app_util.authentication import info_form, is_authenticated, clean_blocks, authentication_page
+from app_util.style_config import set_style_conf
 
 
 def main(config_file):
+    """
+    load context page
+    :param config_file: configuration file
+    """
     bert_embedding_path = config_file["models"]["embedding"]
     ru_sw_file = config_file["data"]["ru_stopwords"]
     ref_num_default = int(config_file["params"]["reference_number"])

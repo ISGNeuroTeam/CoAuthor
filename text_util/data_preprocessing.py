@@ -1,7 +1,4 @@
 from nltk import word_tokenize, pos_tag, RegexpParser
-# from pymystem3 import Mystem
-
-# m = Mystem(mystem_bin="/opt/otp/DataJournalismApp/models/mystem")
 
 
 def lemmatize(mystem_model, sent):

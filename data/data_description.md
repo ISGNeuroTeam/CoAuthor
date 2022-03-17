@@ -15,4 +15,4 @@ Input file must be provided in parquet format. If you have csv data, you can sav
 
 ## Methods
 * Document embedding can be produced with [rubert-tiny](https://huggingface.co/cointegrated/rubert-tiny).
-* Text preprocessing includes lemmatization, stop words removing, punctuation and digits removing and can be done with [util/data_preprocessing.py](../util/data_preprocessing.py).
+* Text preprocessing includes lemmatization, stop words removing, punctuation and digits removing and can be done with [text_util/data_preprocessing.py](../text_util/data_preprocessing.py).

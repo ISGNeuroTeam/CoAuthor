@@ -2,9 +2,9 @@ import re
 
 import streamlit as st
 
-from util.data_preprocessing import filter_chunks
-from util.otp_connector import get_filtered_articles, get_unique_values
-from util.util import source_filter
+from app_util.otp_connector import get_filtered_articles, get_unique_values
+from app_util.util import source_filter
+from text_util.data_preprocessing import filter_chunks
 
 
 def init_session_state(path):

@@ -2,10 +2,10 @@ import numpy as np
 import streamlit as st
 from transformers import AutoTokenizer, AutoModel
 
-from util import extractive_summarization, grammar_check, text_embedding, kwne_similarity, data_preprocessing, \
+from app_util.otp_connector import get_text_features_eep, get_unique_values, get_filtered_articles_with_kw_score
+from app_util.util import source_filter
+from text_util import extractive_summarization, grammar_check, text_embedding, kwne_similarity, data_preprocessing, \
     ner_finder, textrank
-from util.otp_connector import get_text_features_eep, get_unique_values, get_filtered_articles_with_kw_score
-from util.util import source_filter
 
 grammar_tool = grammar_check.download_tool()
 
