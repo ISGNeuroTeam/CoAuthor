@@ -61,7 +61,7 @@ def info_form(block, info=""):
 
 
 def video_form(block):
-    block.video("media/streamlit-menu-2022-02-16-13-02-42.webm", format="video/webm", start_time=0)
+    block.video("media/soavtor_2.mp4", format="video/mp4", start_time=0)
 
 
 def main(config):
