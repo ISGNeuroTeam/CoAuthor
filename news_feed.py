@@ -7,11 +7,28 @@ from util.otp_connector import get_filtered_articles, get_unique_values
 from util.util import check_multiselect_default
 
 
-def filter_params_form(path, ru_sw_file, mystem_model):
+def init_session_state(path):
+    if "feed_regions" not in st.session_state:
+        st.session_state["feed_regions"] = []
+    if "feed_types" not in st.session_state:
+        st.session_state["feed_types"] = []
+    if "feed_sources" not in st.session_state:
+        st.session_state["feed_sources"] = []
+    if "feed_kw" not in st.session_state:
+        st.session_state["feed_kw"] = ""
+    if "feed_sources_list" not in st.session_state:
+        st.session_state["feed_sources_list"] = sorted(get_unique_values(path, "source")["source"].values)
+    if "feed_sources_types_list" not in st.session_state:
+        st.session_state["feed_sources_types_list"] = ["СМИ", "Сайты ведомств и оперативных служб"]
+    if "feed_region_list" not in st.session_state:
+        st.session_state["feed_region_list"] = sorted(get_unique_values(path, "source_region")["source_region"].values)
+
+
+def filter_params_form(ru_sw_file, mystem_model):
     st.subheader('Параметры фильтрации статей в ленте')
-    sources_list = sorted(get_unique_values(path, "source")["source"].values)
-    source_types_list = ["СМИ", "Сайты ведомств и оперативных служб"]
-    region_list = sorted(get_unique_values(path, "source_region")["source_region"].values)
+    sources_list = st.session_state["feed_sources_list"]
+    source_types_list = st.session_state["feed_sources_types_list"]
+    region_list = st.session_state["feed_region_list"]
     if "" in region_list:
         region_list.remove("")
     if "Россия" in region_list:
@@ -50,20 +67,13 @@ def print_news(news_row):
 
 
 def load_page(data_path, ru_sw_file, mystem_model):
-    if "feed_regions" not in st.session_state:
-        st.session_state["feed_regions"] = []
-    if "feed_types" not in st.session_state:
-        st.session_state["feed_types"] = []
-    if "feed_sources" not in st.session_state:
-        st.session_state["feed_sources"] = []
-    if "feed_kw" not in st.session_state:
-        st.session_state["feed_kw"] = ""
+    init_session_state(data_path)
 
     st.markdown("[Предложить источник](https://forms.yandex.ru/cloud/6231dd6bf0984d4d30ed61b9/) &nbsp; &nbsp; &nbsp; &nbsp; [Форма обратной связи](https://forms.yandex.ru/cloud/6231dbd47ffcaf612c42870e/)")
     st.title("Лента новостей")
 
     with st.form("feed_params_form"):
-        regions, source_types, sources, kw = filter_params_form(data_path, ru_sw_file, mystem_model)
+        regions, source_types, sources, kw = filter_params_form(ru_sw_file, mystem_model)
         feed_params_button = st.form_submit_button("Обновить ленту")
     if feed_params_button:
         st.session_state["feed_regions"] = regions

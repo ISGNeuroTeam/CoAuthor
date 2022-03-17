@@ -10,6 +10,29 @@ from util.util import check_multiselect_default
 grammar_tool = grammar_check.download_tool()
 
 
+def init_session_state(sent_num_default, ref_num_default, path):
+    if "context_regions" not in st.session_state:
+        st.session_state["context_regions"] = []
+    if "context_types" not in st.session_state:
+        st.session_state["context_types"] = []
+    if "context_sources" not in st.session_state:
+        st.session_state["context_sources"] = []
+    if "context_dates" not in st.session_state:
+        st.session_state["context_dates"] = []
+    if "sent_num" not in st.session_state:
+        st.session_state["sent_num"] = sent_num_default
+    if "ref_num" not in st.session_state:
+        st.session_state["ref_num"] = ref_num_default
+    if "context_output" not in st.session_state:
+        st.session_state["context_output"] = []
+    if "context_sources_list" not in st.session_state:
+        st.session_state["context_sources_list"] = sorted(get_unique_values(path, "source")["source"].values)
+    if "context_sources_types_list" not in st.session_state:
+        st.session_state["context_sources_types_list"] = ["СМИ", "Сайты ведомств и оперативных служб"]
+    if "context_region_list" not in st.session_state:
+        st.session_state["context_region_list"] = sorted(get_unique_values(path, "source_region")["source_region"].values)
+
+
 @st.experimental_memo
 def get_text_features_otp(input_text):
     input_df = get_text_features_eep(input_text.replace("\n", " ").replace("\r", " ").replace('"', ''))
@@ -43,12 +66,11 @@ def check_grammar_on_click(input_text: str, grammar_container: st.container):
         del grammar_container
 
 
-def filter_params_form(path):
-    # TODO: get sources and etc and save as session state? or cache function
+def filter_params_form():
     st.subheader('Параметры фильтрации документов')
-    sources_list = sorted(get_unique_values(path, "source")["source"].values)
-    source_types_list = ["СМИ", "Сайты ведомств и оперативных служб"]
-    region_list = sorted(get_unique_values(path, "source_region")["source_region"].values)
+    sources_list = st.session_state["context_sources_list"]
+    source_types_list = st.session_state["context_sources_types_list"]
+    region_list = st.session_state["context_region_list"]
     if "" in region_list:
         region_list.remove("")
     if "Россия" in region_list:
@@ -146,20 +168,7 @@ def load_page(bert_embedding_path,
               data_path,
               otl_text_features,
               mystem_model):
-    if "context_regions" not in st.session_state:
-        st.session_state["context_regions"] = []
-    if "context_types" not in st.session_state:
-        st.session_state["context_types"] = []
-    if "context_sources" not in st.session_state:
-        st.session_state["context_sources"] = []
-    if "context_dates" not in st.session_state:
-        st.session_state["context_dates"] = []
-    if "sent_num" not in st.session_state:
-        st.session_state["sent_num"] = sent_num_default
-    if "ref_num" not in st.session_state:
-        st.session_state["ref_num"] = ref_num_default
-    if "context_output" not in st.session_state:
-        st.session_state["context_output"] = []
+    init_session_state(sent_num_default, ref_num_default, data_path)
 
     st.title('Генерация бекграунда')
     button_name = "Сформировать бекграунд статьи"
@@ -182,7 +191,7 @@ def load_page(bert_embedding_path,
         with st.form("params_form"):
             col1, col2 = st.columns(2)
             with col1:
-                regions, source_types, sources, dates = filter_params_form(data_path)
+                regions, source_types, sources, dates = filter_params_form()
             with col2:
                 ref_num, sent_num, chosen_kw_ne = context_params_form(input_kw_ne)
                 if len(chosen_kw_ne) == 0:
