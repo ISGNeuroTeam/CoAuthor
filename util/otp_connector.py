@@ -26,7 +26,7 @@ def filter_dataset(sources, source_types=None, regions=None, dates=None, kw_ne=N
         dates = []
     if regions is None:
         regions = []
-    elif "Федеральные СМИ" in regions:
+    elif "Федеральные источники" in regions:
         regions.extend(["", "Россия"])
     if source_types is None:
         source_types = []

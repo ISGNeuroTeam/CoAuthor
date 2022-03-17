@@ -5,7 +5,7 @@ from transformers import AutoTokenizer, AutoModel
 from util import extractive_summarization, grammar_check, text_embedding, kwne_similarity, data_preprocessing, \
     ner_finder, textrank
 from util.otp_connector import get_text_features_eep, get_unique_values, get_filtered_articles_with_kw_score
-from util.util import check_multiselect_default
+from util.util import source_filter
 
 grammar_tool = grammar_check.download_tool()
 
@@ -71,23 +71,8 @@ def filter_params_form():
     sources_list = st.session_state["context_sources_list"]
     source_types_list = st.session_state["context_sources_types_list"]
     region_list = st.session_state["context_region_list"]
-    if "" in region_list:
-        region_list.remove("")
-    if "Россия" in region_list:
-        region_list.remove("Россия")
-    region_list.append("Федеральные СМИ")
-    sources_default = check_multiselect_default("context_sources", sources_list)
-    sources = st.multiselect('Выберите источники по названию',
-                             sources_list,
-                             default=sources_default)
-    sources_types_default = check_multiselect_default("context_types", source_types_list)
-    source_types = st.multiselect('Или по типу источника...',
-                                  source_types_list,
-                                  default=sources_types_default)
-    regions_default = check_multiselect_default("context_regions", region_list)
-    regions = st.multiselect('...и региону',
-                             region_list,
-                             default=regions_default)
+    sources, source_types, regions = source_filter(sources_list, source_types_list, region_list,
+                                                   "context_sources", "context_types", "context_regions")
     dates = st.date_input("Задайте период поиска",
                           value=st.session_state["context_dates"])
     return regions, source_types, sources, dates
