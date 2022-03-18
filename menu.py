@@ -4,7 +4,7 @@ from pymystem3 import Mystem
 
 import context_gen
 import news_feed
-from app_util.authentication import info_form, is_authenticated, clean_blocks, authentication_page
+from app_util.authentication import clean_blocks, authentication_page
 from app_util.style_config import set_style_conf
 
 
@@ -42,9 +42,7 @@ config = EnvYAML("config_local.yaml")
 login_list_path = config["authentication"]["login_list_path"]
 login_list = open(login_list_path, "r").read().split("\n")
 
-login_block, info_block, video_block = authentication_page()
-if is_authenticated(st.session_state["login"], login_list):
-    clean_blocks([login_block, info_block, video_block])
+login_block, video_block, auth_flag = authentication_page(login_list)
+if auth_flag:
+    clean_blocks([login_block, video_block])
     main(config)
-elif st.session_state["login"]:
-    info_form(info_block, info="Такая почта не зарегистрирована")
