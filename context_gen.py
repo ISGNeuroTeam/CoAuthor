@@ -109,7 +109,6 @@ def generate_context(path, dates, sources, source_types, regions, input_vec, inp
               "август, сентябрь, октябрь, ноябрь, декабрь, дело, слово, место, время, заявление, вопрос, информация," \
               " interfax ru, понедельник, вторник, среда, четверг, пятница, суббота, воскресенье"
     input_kw_ne = set([kw for kw in input_kw_ne if kw not in stop_kw])
-    # TODO: take kw_ne_score to get_kw_ne_sim function for the final score computation
     filtered_df = get_filtered_articles_with_kw_score(path,
                                                       sources,
                                                       source_types=source_types,
@@ -124,7 +123,7 @@ def generate_context(path, dates, sources, source_types, regions, input_vec, inp
                                                       ref_num,
                                                       full_output=True)
     filtered_df = filtered_df.set_index("art_ind")
-    sim_ind_score = kwne_similarity.get_kwne_sim(input_kw_ne, filtered_df, cos_sim_ind_score)
+    sim_ind_score = kwne_similarity.get_kwne_sim(filtered_df, cos_sim_ind_score)
     sim_ind = [x[0] for x in sim_ind_score][:ref_num]
     sim_texts_df = filtered_df.loc[sim_ind]
 
