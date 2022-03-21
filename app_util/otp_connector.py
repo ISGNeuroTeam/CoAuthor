@@ -12,7 +12,6 @@ user = config["connection"]["user"]
 password = config["connection"]["password"]
 loglevel = config["connection"]["loglevel"]
 
-# conn = Connector(host, port, user, password, loglevel=loglevel)
 cache_ttl = 59
 tws = 11
 twf = 22
@@ -32,7 +31,7 @@ def filter_dataset(sources, source_types=None, regions=None, dates=None, kw_ne=N
         source_types = []
     elif "СМИ" in source_types:
         source_types.extend(["Региональные СМИ", "Федеральные СМИ"])
-    query_text = ""
+    query_text = '| eval flag = like(text,"%Неправильно набран адрес или такой страницы на сайте больше не существует%") OR like(text, "%Запрашиваемая страница не найдена%") | where NOT flag | fields - flag'
     if len(sources) > 0:
         source_condition = " OR ".join([f'source="{source}"' for source in sources])
     else:
