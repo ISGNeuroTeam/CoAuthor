@@ -81,9 +81,9 @@ def filter_params_form():
 def context_params_form(input_kw_ne):
     if input_kw_ne is None:
         input_kw_ne = []
-    st.subheader('Настройки генерации бекграунда')
+    st.subheader('Настройки генерации бэкграунда')
 
-    ref_num = st.slider("Выберите максимальное число документов для генерации бекграунда",
+    ref_num = st.slider("Выберите максимальное число документов для генерации бэкграунда",
                         min_value=1,
                         max_value=10,
                         value=st.session_state["ref_num"],
@@ -96,7 +96,7 @@ def context_params_form(input_kw_ne):
                          step=1)
 
     if len(input_kw_ne) > 0:
-        kw_ne = st.multiselect("Выберите ключевые слова для более точного формирования бекграунда",
+        kw_ne = st.multiselect("Выберите ключевые слова для более точного формирования бэкграунда",
                                sorted(list(input_kw_ne)))
     else:
         kw_ne = []
@@ -154,8 +154,8 @@ def load_page(bert_embedding_path,
               mystem_model):
     init_session_state(sent_num_default, ref_num_default, data_path)
 
-    st.title('Генерация бекграунда')
-    button_name = "Сформировать бекграунд статьи"
+    st.title('Генерация бэкграунда')
+    button_name = "Сформировать бэкграунд статьи"
     input_text = st.text_area('Начните набирать текст в поле. '
                               'Когда текст готов, задайте настройки и нажмите  "%s"' % button_name,
                               height=700, key="input_text")
@@ -171,7 +171,7 @@ def load_page(bert_embedding_path,
     if grammar_button:
         check_grammar_on_click(input_text, grammar_container)
 
-    with st.expander("Параметры для генерации бекграунда", expanded=False):
+    with st.expander("Параметры для генерации бэкграунда", expanded=False):
         with st.form("params_form"):
             col1, col2 = st.columns(2)
             with col1:
