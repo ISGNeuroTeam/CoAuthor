@@ -46,7 +46,7 @@ def get_text_features(input_text, ru_sw_file, _mystem_model, bert_embedding_path
     input_noun_phrases = data_preprocessing.collect_np(input_text, ru_sw_file, _mystem_model)
     input_kw = textrank.text_rank(input_noun_phrases, 15)
     input_ne = data_preprocessing.filter_chunks(_mystem_model, ner_finder.finder(input_text), ru_sw_file)
-    input_kw_ne = kwne_similarity.unite_kw_ne(input_kw, input_ne, _mystem_model)
+    input_kw_ne = kwne_similarity.unite_kw_ne(input_kw, input_ne)
 
     tokenizer = AutoTokenizer.from_pretrained(bert_embedding_path)
     model = AutoModel.from_pretrained(bert_embedding_path)
@@ -105,9 +105,7 @@ def context_params_form(input_kw_ne):
 
 @st.experimental_memo
 def generate_context(path, dates, sources, source_types, regions, input_vec, input_kw_ne, ref_num, sent_num):
-    stop_kw = "день, неделя, год, тасс, интерфакс, страна, число, январь, февраль, март, апрель, май, июнь, июль, " \
-              "август, сентябрь, октябрь, ноябрь, декабрь, дело, слово, место, время, заявление, вопрос, информация," \
-              " interfax ru, понедельник, вторник, среда, четверг, пятница, суббота, воскресенье"
+    stop_kw = open("data/ru_stopwords.txt", "r").read().split("\n")
     input_kw_ne = set([kw for kw in input_kw_ne if kw not in stop_kw])
     filtered_df = get_filtered_articles_with_kw_score(path,
                                                       sources,

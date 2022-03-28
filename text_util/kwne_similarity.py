@@ -1,13 +1,9 @@
 import numpy as np
 import pandas as pd
 
-from text_util.data_preprocessing import lemmatize
 
-
-def unite_kw_ne(input_kw: list, input_ne: list, mystem_model):
-    kw = [token.replace("%", " ") for token in input_kw]
-    ne = [" ".join(item).strip() for item in lemmatize(mystem_model, input_ne)]
-    return set(kw) | set(ne)
+def unite_kw_ne(input_kw: list, input_ne: list):
+    return set(input_kw) | set(input_ne)
 
 
 def get_kwne_sim(archive_df: pd.DataFrame, sim_texts: list):

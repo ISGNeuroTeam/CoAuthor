@@ -23,10 +23,11 @@ def filter_chunks(mystem_model, chunks, ru_sw_file):
     chunks = [mystem_model.lemmatize(chunk) for chunk in chunks]
     out_chunks = []
     for chunk in chunks:
-        out_chunks.append(
-            " ".join([lemma.translate(str.maketrans('', '', pattern_punct)).strip() for lemma in chunk if
-                      lemma not in stopwords]).strip().lower()
-        )
+        new_chunk = [lemma.translate(str.maketrans('', '', pattern_punct)).strip() for lemma in chunk if
+                     lemma not in stopwords]
+        new_chunk = [lemma for lemma in new_chunk if len(lemma) > 0]
+        if len(new_chunk) > 0:
+            out_chunks.append(" ".join(new_chunk).strip().lower())
     return list(filter(lambda ch: len(ch) > 3, out_chunks))
 
 
