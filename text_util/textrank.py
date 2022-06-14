@@ -77,5 +77,6 @@ def text_rank(text, kw_num, window_size=4, steps=10, min_diff=1e-5, d=0.85):
     for word, index in vocab.items():
         node_weight[word] = pr[index]
 
-    predicted_kw = [k[0] for k in sorted(node_weight.items(), key=lambda x: x[1], reverse=True)[:kw_num]]
+    predicted_kw = [k for k in sorted(node_weight.items(), key=lambda x: x[1], reverse=True)[:kw_num]]
+    predicted_kw = list(filter(lambda x: x[1] >= 1.0, predicted_kw))
     return predicted_kw

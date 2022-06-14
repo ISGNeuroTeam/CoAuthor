@@ -5,7 +5,7 @@ from transformers import AutoTokenizer, AutoModel
 from app_util.otp_connector import get_text_features_eep, get_unique_values, get_filtered_articles_with_kw_score
 from app_util.util import source_filter
 from text_util import extractive_summarization, grammar_check, text_embedding, kwne_similarity, data_preprocessing, \
-    ner_finder, textrank
+    ner_finder, textrank, kw_ne_scoring
 
 grammar_tool = grammar_check.download_tool()
 
@@ -30,7 +30,8 @@ def init_session_state(sent_num_default, ref_num_default, path):
     if "context_sources_types_list" not in st.session_state:
         st.session_state["context_sources_types_list"] = ["СМИ", "Сайты ведомств и оперативных служб"]
     if "context_region_list" not in st.session_state:
-        st.session_state["context_region_list"] = sorted(get_unique_values(path, "source_region")["source_region"].values)
+        st.session_state["context_region_list"] = sorted(
+            get_unique_values(path, "source_region")["source_region"].values)
 
 
 @st.experimental_memo
@@ -44,15 +45,17 @@ def get_text_features_otp(input_text):
 @st.experimental_memo
 def get_text_features(input_text, ru_sw_file, _mystem_model, bert_embedding_path):
     input_noun_phrases = data_preprocessing.collect_np(input_text, ru_sw_file, _mystem_model)
-    input_kw = textrank.text_rank(input_noun_phrases, 15)
+    input_kw_textrank_score = textrank.text_rank(input_noun_phrases, 15)
+    input_kw = [x[0] for x in input_kw_textrank_score]
     input_ne = data_preprocessing.filter_chunks(_mystem_model, ner_finder.finder(input_text), ru_sw_file)
-    input_kw_ne = kwne_similarity.unite_kw_ne(input_kw, input_ne)
 
     tokenizer = AutoTokenizer.from_pretrained(bert_embedding_path)
     model = AutoModel.from_pretrained(bert_embedding_path)
     # TODO: add file not found error
-    input_vec = text_embedding.embed_labse(input_text, tokenizer, model)
-    return input_kw_ne, input_vec
+    # input_vec = text_embedding.embed_labse(input_text, tokenizer, model)
+    input_clean_text = data_preprocessing.text_preprocessing(input_text, ru_sw_file, _mystem_model)
+    input_vec = text_embedding.sentences_to_embeddings(input_clean_text, tokenizer, model)
+    return input_kw, input_ne, input_vec, input_kw_textrank_score
 
 
 def check_grammar_on_click(input_text: str, grammar_container: st.container):
@@ -104,9 +107,10 @@ def context_params_form(input_kw_ne):
 
 
 @st.experimental_memo
-def generate_context(path, dates, sources, source_types, regions, input_vec, input_kw_ne, ref_num, sent_num):
-    stop_kw = open("data/ru_stopwords.txt", "r").read().split("\n")
-    input_kw_ne = set([kw for kw in input_kw_ne if kw not in stop_kw])
+def generate_context(path, dates, sources, source_types, regions, input_vec, input_kw_ne, input_kw_textrank_score,
+                     ref_num, sent_num):
+    # stop_kw = open("data/ru_stopwords.txt", "r").read().split("\n")
+    # input_kw_ne = [kw for kw in input_kw_ne if kw not in stop_kw]
     filtered_df = get_filtered_articles_with_kw_score(path,
                                                       sources,
                                                       source_types=source_types,
@@ -116,14 +120,26 @@ def generate_context(path, dates, sources, source_types, regions, input_vec, inp
                                                       n=2000)
     if len(filtered_df) == 0:
         return []
+
+    # compute tf-df score for kw and ne
+    vectorizer, df_matrix, token_to_ind = kw_ne_scoring.get_tf_idf_for_data(filtered_df, "kw_ne")
+    filtered_df["kw_tfidf_score"] = filtered_df.apply(
+        lambda row: kw_ne_scoring.tf_idf_score(df_matrix, row, token_to_ind, "kw_ne"), axis=1)
+    filtered_df["kwne_total_score"] = filtered_df.apply(
+        lambda row: kw_ne_scoring.compute_total_kw_score(row["kw_tfidf_score"], row["kw_textrank_score"]))
+
+    input_kwne_tfidf_score = vectorizer.transform(" ".join(["".join(kw.split(" ")) for kw in input_kw_ne]))
+    input_kwne_total_score = kw_ne_scoring.compute_total_kw_score(input_kwne_tfidf_score, input_kw_textrank_score)
+
+    # compute embeddings score
     cos_sim_ind_score = text_embedding.find_sim_texts(filtered_df.dropna(how="all"),
                                                       input_vec,
                                                       ref_num,
                                                       full_output=True)
+    cos_sim_score = [x[1] for x in cos_sim_ind_score]
+    filtered_df["embedding_score"] = cos_sim_score
     filtered_df = filtered_df.set_index("art_ind")
-    sim_ind_score = kwne_similarity.get_kwne_sim(filtered_df, cos_sim_ind_score)
-    sim_ind = [x[0] for x in sim_ind_score][:ref_num]
-    sim_texts_df = filtered_df.loc[sim_ind]
+    sim_texts_df = kwne_similarity.get_sim_texts(filtered_df, input_kwne_total_score, ref_num)
 
     if len(sim_texts_df) == 0:
         return []
@@ -148,8 +164,7 @@ def load_page(bert_embedding_path,
               ref_num_default,
               sent_num_default,
               data_path,
-              otl_text_features,
-              mystem_model):
+              mystem_model):  # otl_text_features,
     init_session_state(sent_num_default, ref_num_default, data_path)
 
     st.title('Генерация бэкграунда')
@@ -158,10 +173,14 @@ def load_page(bert_embedding_path,
                               'Когда текст готов, задайте настройки и нажмите  "%s"' % button_name,
                               height=700, key="input_text")
 
-    if otl_text_features:
-        input_kw_ne, input_vec = get_text_features_otp(input_text)
-    else:
-        input_kw_ne, input_vec = get_text_features(input_text, ru_sw_file, mystem_model, bert_embedding_path)
+    # if otl_text_features:
+    #     input_kw, input_ne, input_vec, input_kw_textrank_score = get_text_features_otp(input_text)
+    # else:
+    input_kw, input_ne, input_vec, input_kw_textrank_score = get_text_features(input_text,
+                                                                               ru_sw_file,
+                                                                               mystem_model,
+                                                                               bert_embedding_path)
+    input_kw_ne = kwne_similarity.unite_kw_ne(input_kw, input_ne)
 
     grammar_button = st.button("Проверить правописание")
     grammar_container = st.container()
@@ -190,8 +209,8 @@ def load_page(bert_embedding_path,
     gen_button = st.button(button_name)
 
     if gen_button:
-        output = generate_context(data_path, dates, sources, source_types, regions, input_vec, chosen_kw_ne, ref_num,
-                                  sent_num)
+        output = generate_context(data_path, dates, sources, source_types, regions, input_vec, chosen_kw_ne,
+                                  input_kw_textrank_score, ref_num, sent_num)
         st.session_state["context_output"] = output
         if len(output) == 0:
             st.write("Я не нашёл подходящие под параметры фильтрации тексты. Попробуйте поменять настройки.")

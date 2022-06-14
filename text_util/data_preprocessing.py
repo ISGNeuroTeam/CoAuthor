@@ -1,8 +1,30 @@
+import re
+
 from nltk import word_tokenize, pos_tag, RegexpParser
+from razdel import sentenize
 
 
 def lemmatize(mystem_model, sent):
     return [mystem_model.lemmatize(token) for token in sent]
+
+
+def remove_stop_words_punct(sent, ru_sw):
+    pattern_punct = '[\.!@"“’«»#$%&\'()*+,—/:;<=>?^_`{|}~\[\]] [\n]'
+    return [token.strip() for token in sent if
+            token.strip() not in ru_sw and not token.strip().isdigit() and token.strip() not in pattern_punct]
+
+
+# takes raw text, dict of stopwords and output clean and lemmatized text
+def text_preprocessing(text, ru_sw, lemmatizer):
+    text = text.replace('\xa0', ' ')
+    pattern_url = 'http[s]?://\S+|www\.\S+'
+    pattern_tags = '<.*?>'
+
+    clean_text = re.sub(pattern_tags, "", re.sub(pattern_url, "", text))
+    sentences = [t.text for t in sentenize(clean_text)]
+    tokens = lemmatize(lemmatizer, sentences)
+    tokens = [remove_stop_words_punct(sent, ru_sw) for sent in tokens]
+    return [" ".join(sent) for sent in tokens]
 
 
 def tokens_to_chunks(tokens):
